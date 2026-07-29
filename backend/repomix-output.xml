@@ -1,0 +1,4955 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: node_modules, dist, build, .git
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.dockerignore
+.env.example
+.prettierrc
+Dockerfile
+eslint.config.mjs
+nest-cli.json
+package.json
+README.md
+src/app.module.ts
+src/auth/auth.controller.ts
+src/auth/auth.module.ts
+src/auth/auth.service.spec.ts
+src/auth/auth.service.ts
+src/auth/decorators/current-user.decorator.ts
+src/auth/decorators/roles.decorator.ts
+src/auth/dto/change-password.dto.ts
+src/auth/dto/forgot-password.dto.ts
+src/auth/dto/login.dto.ts
+src/auth/dto/register.dto.ts
+src/auth/dto/reset-password.dto.ts
+src/auth/guards/jwt-auth.guard.ts
+src/auth/guards/jwt-refresh.guard.ts
+src/auth/guards/roles.guard.ts
+src/auth/refresh-token.entity.ts
+src/auth/strategies/jwt-refresh.strategy.ts
+src/auth/strategies/jwt.strategy.ts
+src/common/filters/http-exception.filter.ts
+src/database/data-source.ts
+src/database/migrations/1706500000000-InitSchema.ts
+src/database/seed.ts
+src/main.ts
+src/projects/dto/add-member.dto.ts
+src/projects/dto/create-project.dto.ts
+src/projects/dto/update-project.dto.ts
+src/projects/project.entity.ts
+src/projects/projects.controller.ts
+src/projects/projects.module.ts
+src/projects/projects.service.spec.ts
+src/projects/projects.service.ts
+src/repomix-output.xml
+src/tasks/dto/create-task.dto.ts
+src/tasks/dto/filter-task.dto.ts
+src/tasks/dto/update-task.dto.ts
+src/tasks/task.entity.ts
+src/tasks/tasks.controller.ts
+src/tasks/tasks.module.ts
+src/tasks/tasks.service.spec.ts
+src/tasks/tasks.service.ts
+src/users/user.entity.ts
+Taskboard-API.postman_collection.json
+tsconfig.build.json
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".dockerignore">
+node_modules
+dist
+.env
+.git
+.gitignore
+*.md
+coverage
+</file>
+
+<file path=".env.example">
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_NAME=taskboard
+JWT_SECRET=your_super_secret_key_change_in_production
+JWT_EXPIRES_IN=7d
+PORT=3001
+</file>
+
+<file path=".prettierrc">
+{
+  "singleQuote": true,
+  "trailingComma": "all"
+}
+</file>
+
+<file path="Dockerfile">
+# ---- Build stage ----
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# ---- Production stage ----
+FROM node:20-alpine
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/dist ./dist
+
+EXPOSE 3001
+
+CMD ["node", "dist/main"]
+</file>
+
+<file path="eslint.config.mjs">
+// @ts-check
+import eslint from '@eslint/js';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  {
+    ignores: ['eslint.config.mjs'],
+  },
+  eslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
+  eslintPluginPrettierRecommended,
+  {
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+      },
+      sourceType: 'commonjs',
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-floating-promises': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+      "prettier/prettier": ["error", { endOfLine: "auto" }],
+    },
+  },
+);
+</file>
+
+<file path="nest-cli.json">
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true
+  }
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "backend",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/database/data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.4.6",
+    "@nestjs/typeorm": "^11.0.3",
+    "bcryptjs": "^3.0.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pg": "^8.22.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.1",
+    "typeorm": "^1.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.0",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/supertest": "^7.0.0",
+    "cookie-parser": "^1.4.7",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.2",
+    "globals": "^17.0.0",
+    "jest": "^30.0.0",
+    "prettier": "^3.4.2",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}
+</file>
+
+<file path="README.md">
+# Task Management API
+
+A production-ready task management backend built with NestJS, PostgreSQL, and TypeORM. Supports project-based task tracking with role-based access control, JWT authentication, and refresh token rotation.
+
+---
+
+## Tech Stack
+
+- **Backend:** NestJS + TypeScript
+- **Database:** PostgreSQL + TypeORM
+- **Auth:** JWT (Access + Refresh tokens with rotation)
+- **Validation:** class-validator + class-transformer
+- **Docs:** Swagger / OpenAPI
+- **Testing:** Jest
+
+---
+
+## Features
+
+- JWT authentication with refresh token rotation & device tracking
+- Account lockout after 5 failed login attempts
+- Role-based access control (Admin / Member)
+- Project management with member access control
+- Task management with filtering by status, priority, and assignee
+- Centralized error handling
+- Swagger documentation at `/api/docs`
+
+---
+
+## Project Structure
+
+```
+src/
+├── auth/
+│   ├── decorators/         # CurrentUser, Roles decorators
+│   ├── dto/                # Login, Register, ChangePassword, ForgotPassword, ResetPassword
+│   ├── guards/             # JwtAuthGuard, JwtRefreshGuard, RolesGuard
+│   ├── strategies/         # JWT and JWT Refresh Passport strategies
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   ├── auth.module.ts
+│   └── refresh-token.entity.ts
+├── projects/
+│   ├── dto/                # CreateProject, UpdateProject, AddMember
+│   ├── project.entity.ts
+│   ├── projects.controller.ts
+│   ├── projects.service.ts
+│   └── projects.module.ts
+├── tasks/
+│   ├── dto/                # CreateTask, UpdateTask, FilterTask
+│   ├── task.entity.ts
+│   ├── tasks.controller.ts
+│   ├── tasks.service.ts
+│   └── tasks.module.ts
+├── users/
+│   └── user.entity.ts
+├── common/
+│   └── filters/
+│       └── http-exception.filter.ts
+├── app.module.ts
+└── main.ts
+```
+
+---
+
+## Prerequisites
+
+- Node.js >= 18
+- PostgreSQL >= 14
+- npm
+
+---
+
+## Setup
+
+### 1. Clone the repository
+
+```bash
+git clone <your-repo-url>
+cd task-management
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+```bash
+cp .env.example .env
+```
+
+Fill in the values in `.env` (see [Environment Variables](#environment-variables) below).
+
+### 4. Create the database
+
+```bash
+psql -U postgres -c "CREATE DATABASE taskboard;"
+```
+
+### 5. Run the application
+
+```bash
+# Development
+npm run start:dev
+
+# Production
+npm run build
+npm run start:prod
+```
+
+The API will be available at: `http://localhost:3001/api`  
+Swagger docs at: `http://localhost:3001/api/docs`
+
+---
+
+## Environment Variables
+
+| Variable             | Description               | Example                 |
+| -------------------- | ------------------------- | ----------------------- |
+| `PORT`               | Port the server runs on   | `3001`                  |
+| `NODE_ENV`           | Environment               | `development`           |
+| `DATABASE_HOST`      | PostgreSQL host           | `localhost`             |
+| `DATABASE_PORT`      | PostgreSQL port           | `5432`                  |
+| `DATABASE_USER`      | PostgreSQL username       | `postgres`              |
+| `DATABASE_PASSWORD`  | PostgreSQL password       | `yourpassword`          |
+| `DATABASE_NAME`      | PostgreSQL database name  | `taskboard`             |
+| `JWT_ACCESS_SECRET`  | Secret for access tokens  | `your_access_secret`    |
+| `JWT_REFRESH_SECRET` | Secret for refresh tokens | `your_refresh_secret`   |
+| `FRONTEND_URL`       | Allowed CORS origin       | `http://localhost:3000` |
+
+---
+
+## API Overview
+
+### Auth — `/api/auth`
+
+| Method | Endpoint           | Auth   | Description                 |
+| ------ | ------------------ | ------ | --------------------------- |
+| POST   | `/register`        | Public | Register a new user         |
+| POST   | `/login`           | Public | Login and receive tokens    |
+| POST   | `/refresh`         | Cookie | Refresh access token        |
+| POST   | `/logout`          | Bearer | Logout current device       |
+| POST   | `/logout-all`      | Bearer | Logout all devices          |
+| GET    | `/me`              | Bearer | Get current user profile    |
+| POST   | `/change-password` | Bearer | Change password             |
+| POST   | `/forgot-password` | Public | Request password reset code |
+| POST   | `/reset-password`  | Public | Reset password with code    |
+
+### Projects — `/api/projects`
+
+| Method | Endpoint               | Auth   | Description                       |
+| ------ | ---------------------- | ------ | --------------------------------- |
+| POST   | `/`                    | Bearer | Create a project                  |
+| GET    | `/`                    | Bearer | List projects you are a member of |
+| GET    | `/:id`                 | Bearer | Get a single project              |
+| PATCH  | `/:id`                 | Bearer | Update project (Admin only)       |
+| DELETE | `/:id`                 | Bearer | Delete project (Admin only)       |
+| POST   | `/:id/members`         | Bearer | Add a member (Admin only)         |
+| DELETE | `/:id/members/:userId` | Bearer | Remove a member (Admin only)      |
+
+### Tasks — `/api/projects/:projectId/tasks`
+
+| Method | Endpoint   | Auth   | Description                                     |
+| ------ | ---------- | ------ | ----------------------------------------------- |
+| POST   | `/`        | Bearer | Create a task                                   |
+| GET    | `/`        | Bearer | List tasks (filter by status/priority/assignee) |
+| GET    | `/:taskId` | Bearer | Get a single task                               |
+| PATCH  | `/:taskId` | Bearer | Update task (Admin / creator / assignee)        |
+| DELETE | `/:taskId` | Bearer | Delete task (Admin / creator only)              |
+
+Full interactive documentation is available at `/api/docs`.
+
+---
+
+## Roles
+
+| Role     | Capabilities                                                               |
+| -------- | -------------------------------------------------------------------------- |
+| `admin`  | Full access: manage projects, members, and all tasks within their projects |
+| `member` | Can create tasks, edit tasks they created or are assigned to               |
+
+> **Note:** The `admin` role is a platform-level role set at registration. Project-level admin is determined by who created the project.
+
+---
+
+## Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# With coverage
+npm run test:cov
+```
+
+Tests cover:
+
+- Registration conflict on duplicate email
+- Successful registration
+- Login failure on wrong password
+- Login failure on locked account
+- Project update forbidden for non-admin
+- Removing project creator from members is forbidden
+- Non-member cannot access a project
+
+---
+
+## Seed / Test Credentials
+
+Since the app uses `synchronize: true` in development, tables are created automatically on first run.
+
+Register an Admin account:
+
+```bash
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Admin User", "email": "admin@test.com", "password": "Admin1234", "role": "admin"}'
+```
+
+Register a Member account:
+
+```bash
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Member User", "email": "member@test.com", "password": "Member1234"}'
+```
+
+---
+
+## Notes
+
+- Refresh tokens are stored hashed in the database and rotated on every use.
+- Account lockout triggers after 5 consecutive failed login attempts (30-minute lock).
+- All routes under `/api/projects` and `/api/projects/:id/tasks` require a valid Bearer token.
+- Tasks can only be assigned to users who are members of the project.
+</file>
+
+<file path="src/app.module.ts">
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+
+        host: configService.get<string>('DATABASE_HOST'),
+        port: Number(configService.get<number>('DATABASE_PORT', 5432)),
+        username: configService.get<string>('DATABASE_USER'),
+        password: configService.get<string>('DATABASE_PASSWORD'),
+        database: configService.get<string>('DATABASE_NAME'),
+
+        // SSL is required for hosted Postgres (e.g. Neon) but must be OFF
+        // for local/Docker Postgres. Controlled via DATABASE_SSL env var.
+        ssl:
+          configService.get('DATABASE_SSL') === 'true'
+            ? { rejectUnauthorized: false }
+            : false,
+
+        autoLoadEntities: true,
+        synchronize: configService.get('NODE_ENV') !== 'production',
+
+        migrations: ['dist/database/migrations/*.js'],
+        migrationsRun: configService.get('NODE_ENV') === 'production',
+      }),
+    }),
+
+    AuthModule,
+    ProjectsModule,
+    TasksModule,
+  ],
+})
+export class AppModule {}
+</file>
+
+<file path="src/auth/auth.controller.ts">
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from '../users/user.entity';
+import type { Response, Request } from 'express';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private authService: AuthService) {}
+
+  @Post('register')
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  @Post('login')
+  login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
+    const deviceInfo = req.headers['user-agent'];
+    return this.authService.login(dto, res, deviceInfo);
+  }
+
+  @UseGuards(JwtRefreshGuard)
+  @Post('refresh')
+  refresh(@CurrentUser() user: any, @Res({ passthrough: true }) res: Response) {
+    return this.authService.refresh(user.id, user.refreshToken, res);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  logout(
+    @CurrentUser() user: User,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req?.cookies?.refresh_token;
+    return this.authService.logout(res, refreshToken, user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout-all')
+  logoutAll(
+    @CurrentUser() user: User,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.logoutAll(user.id, res);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  me(@CurrentUser() user: User) {
+    return this.authService.me(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  changePassword(@Body() dto: ChangePasswordDto, @CurrentUser() user: User) {
+    return this.authService.changePassword(dto, user.id);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+}
+</file>
+
+<file path="src/auth/auth.module.ts">
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { User } from '../users/user.entity';
+import { RefreshToken } from './refresh-token.entity';
+
+@Module({
+  imports: [
+    PassportModule,
+    JwtModule.register({}),
+    TypeOrmModule.forFeature([User, RefreshToken]),
+  ],
+  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
+  controllers: [AuthController],
+})
+export class AuthModule {}
+</file>
+
+<file path="src/auth/auth.service.spec.ts">
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthService } from './auth.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { User, UserRole } from '../users/user.entity';
+import { RefreshToken } from './refresh-token.entity';
+import { JwtService } from '@nestjs/jwt';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
+
+const mockUserRepo = () => ({
+  findOne: jest.fn(),
+  create: jest.fn(),
+  save: jest.fn(),
+});
+
+const mockRefreshTokenRepo = () => ({
+  find: jest.fn(),
+  create: jest.fn(),
+  save: jest.fn(),
+  update: jest.fn(),
+});
+
+const mockJwtService = () => ({
+  sign: jest.fn().mockReturnValue('mock_token'),
+});
+
+describe('AuthService', () => {
+  let service: AuthService;
+  let userRepo: ReturnType<typeof mockUserRepo>;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AuthService,
+        { provide: getRepositoryToken(User), useFactory: mockUserRepo },
+        { provide: getRepositoryToken(RefreshToken), useFactory: mockRefreshTokenRepo },
+        { provide: JwtService, useFactory: mockJwtService },
+      ],
+    }).compile();
+
+    service = module.get<AuthService>(AuthService);
+    userRepo = module.get(getRepositoryToken(User));
+  });
+
+  // TEST 1 — Register: conflict on duplicate email
+  describe('register', () => {
+    it('should throw ConflictException if email already exists', async () => {
+      userRepo.findOne.mockResolvedValue({ id: '1', email: 'test@test.com' });
+
+      await expect(
+        service.register({ email: 'test@test.com', password: 'Password1', name: 'Test' }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should register successfully with a new email', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+      userRepo.create.mockReturnValue({ email: 'new@test.com' });
+      userRepo.save.mockResolvedValue({ id: '1', email: 'new@test.com' });
+
+      const result = await service.register({
+        email: 'new@test.com',
+        password: 'Password1',
+        name: 'New User',
+      });
+
+      expect(result).toEqual({ message: 'Registered successfully. Please login.' });
+    });
+  });
+
+  // TEST 2 — Login: invalid credentials
+  describe('login', () => {
+    it('should throw UnauthorizedException for wrong password', async () => {
+      const hashedPassword = await bcrypt.hash('CorrectPass1', 12);
+      userRepo.findOne.mockResolvedValue({
+        id: '1',
+        email: 'test@test.com',
+        password: hashedPassword,
+        loginAttempts: 0,
+        lockedUntil: null,
+      });
+      userRepo.save.mockResolvedValue({});
+
+      const mockRes = { cookie: jest.fn() } as any;
+
+      await expect(
+        service.login({ email: 'test@test.com', password: 'WrongPass1' }, mockRes),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if account is locked', async () => {
+      userRepo.findOne.mockResolvedValue({
+        id: '1',
+        email: 'test@test.com',
+        password: 'hashed',
+        loginAttempts: 0,
+        lockedUntil: new Date(Date.now() + 60000), // locked for 1 more minute
+      });
+
+      const mockRes = { cookie: jest.fn() } as any;
+
+      await expect(
+        service.login({ email: 'test@test.com', password: 'anything' }, mockRes),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+});
+</file>
+
+<file path="src/auth/auth.service.ts">
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
+import { User } from '../users/user.entity';
+import { RefreshToken } from './refresh-token.entity';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { Response } from 'express';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepo: Repository<RefreshToken>,
+    private jwt: JwtService,
+  ) {}
+
+  // ==================== TOKENS ====================
+
+  private generateAccessToken(user: User) {
+    return this.jwt.sign(
+      { sub: user.id, email: user.email, role: user.role },
+      { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' },
+    );
+  }
+
+  private generateRefreshToken(userId: string) {
+    return this.jwt.sign(
+      { sub: userId },
+      { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' },
+    );
+  }
+
+  private setRefreshTokenCookie(res: Response, token: string) {
+    res.cookie('refresh_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  }
+
+  private async saveRefreshToken(
+    userId: string,
+    token: string,
+    deviceInfo?: string,
+  ) {
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    if (deviceInfo) {
+      await this.refreshTokenRepo.update(
+        { userId, deviceInfo, isRevoked: false },
+        { isRevoked: true },
+      );
+    }
+    const hashed = await bcrypt.hash(token, 10);
+    const refreshToken = this.refreshTokenRepo.create({
+      userId,
+      token: hashed,
+      expiresAt,
+      deviceInfo,
+    });
+    return this.refreshTokenRepo.save(refreshToken);
+  }
+
+  // ==================== REGISTER ====================
+
+  async register(dto: RegisterDto) {
+    const exists = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (exists) throw new ConflictException('Email already in use');
+
+    const hashed = await bcrypt.hash(dto.password, 12);
+    const user = this.userRepo.create({ ...dto, password: hashed });
+    await this.userRepo.save(user);
+
+    return { message: 'Registered successfully. Please login.' };
+  }
+
+  // ==================== LOGIN ====================
+
+  async login(dto: LoginDto, res: Response, deviceInfo?: string) {
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const minutesLeft = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 60000,
+      );
+      throw new UnauthorizedException(
+        `Account locked. Try again in ${minutesLeft} minutes.`,
+      );
+    }
+
+    const valid = await bcrypt.compare(dto.password, user.password);
+    if (!valid) {
+      user.loginAttempts += 1;
+      if (user.loginAttempts >= 5) {
+        user.lockedUntil = new Date(Date.now() + 30 * 60 * 1000);
+        user.loginAttempts = 0;
+        await this.userRepo.save(user);
+        throw new UnauthorizedException('Account locked for 30 minutes.');
+      }
+      await this.userRepo.save(user);
+      throw new UnauthorizedException(
+        `Invalid credentials. ${5 - user.loginAttempts} attempts remaining.`,
+      );
+    }
+
+    user.loginAttempts = 0;
+    user.lockedUntil = null;
+    await this.userRepo.save(user);
+
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user.id);
+    await this.saveRefreshToken(user.id, refreshToken, deviceInfo);
+    this.setRefreshTokenCookie(res, refreshToken);
+
+    return {
+      access_token: accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    };
+  }
+
+  // ==================== REFRESH ====================
+
+  async refresh(userId: string, rawToken: string, res: Response) {
+    const activeTokens = await this.refreshTokenRepo.find({
+      where: { userId, isRevoked: false },
+    });
+
+    let matchedToken: RefreshToken | null = null;
+    for (const t of activeTokens) {
+      const isMatch = await bcrypt.compare(rawToken, t.token);
+      if (isMatch) {
+        matchedToken = t;
+        break;
+      }
+    }
+
+    if (!matchedToken || matchedToken.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+
+    matchedToken.isRevoked = true;
+    await this.refreshTokenRepo.save(matchedToken);
+
+    const accessToken = this.generateAccessToken(user);
+    const newRefreshToken = this.generateRefreshToken(user.id);
+    await this.saveRefreshToken(
+      user.id,
+      newRefreshToken,
+      matchedToken.deviceInfo,
+    );
+    this.setRefreshTokenCookie(res, newRefreshToken);
+
+    return { access_token: accessToken };
+  }
+
+  // ==================== LOGOUT ====================
+
+  async logout(res: Response, rawRefreshToken?: string, userId?: string) {
+    if (rawRefreshToken && userId) {
+      const activeTokens = await this.refreshTokenRepo.find({
+        where: { userId, isRevoked: false },
+      });
+      for (const t of activeTokens) {
+        const isMatch = await bcrypt.compare(rawRefreshToken, t.token);
+        if (isMatch) {
+          t.isRevoked = true;
+          await this.refreshTokenRepo.save(t);
+          break;
+        }
+      }
+    }
+    res.clearCookie('refresh_token');
+    return { message: 'Logged out successfully' };
+  }
+
+  // ==================== LOGOUT ALL ====================
+
+  async logoutAll(userId: string, res: Response) {
+    await this.refreshTokenRepo.update(
+      { userId, isRevoked: false },
+      { isRevoked: true },
+    );
+    res.clearCookie('refresh_token');
+    return { message: 'Logged out from all devices successfully' };
+  }
+
+  // ==================== ME ====================
+
+  async me(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    const { password, ...result } = user;
+    return result;
+  }
+
+  // ==================== CHANGE PASSWORD ====================
+
+  async changePassword(dto: ChangePasswordDto, userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const valid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!valid) throw new BadRequestException('Current password is incorrect');
+
+    user.password = await bcrypt.hash(dto.newPassword, 12);
+    await this.userRepo.save(user);
+
+    await this.refreshTokenRepo.update(
+      { userId, isRevoked: false },
+      { isRevoked: true },
+    );
+    return { message: 'Password changed successfully. Please login again.' };
+  }
+
+  // ==================== FORGOT PASSWORD ====================
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (!user)
+      return { message: 'If this email exists, a reset code has been sent.' };
+
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetPasswordToken = token;
+    user.resetPasswordExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    await this.userRepo.save(user);
+
+    // TODO: send email
+    console.log(`Reset token for ${user.email}: ${token}`);
+    return { message: 'If this email exists, a reset code has been sent.' };
+  }
+
+  // ==================== RESET PASSWORD ====================
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+
+    if (
+      !user ||
+      !user.resetPasswordToken ||
+      !user.resetPasswordExpiry ||
+      user.resetPasswordToken !== dto.token ||
+      user.resetPasswordExpiry < new Date()
+    ) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    user.password = await bcrypt.hash(dto.newPassword, 12);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpiry = null;
+    user.loginAttempts = 0;
+    user.lockedUntil = null;
+    await this.userRepo.save(user);
+
+    await this.refreshTokenRepo.update(
+      { userId: user.id, isRevoked: false },
+      { isRevoked: true },
+    );
+    return { message: 'Password reset successfully. Please login again.' };
+  }
+}
+</file>
+
+<file path="src/auth/decorators/current-user.decorator.ts">
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+
+export const CurrentUser = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.user;
+  },
+);
+</file>
+
+<file path="src/auth/decorators/roles.decorator.ts">
+import { SetMetadata } from '@nestjs/common';
+import { UserRole } from '../../users/user.entity';
+
+export const Roles = (...roles: UserRole[]) => SetMetadata('roles', roles);
+</file>
+
+<file path="src/auth/dto/change-password.dto.ts">
+import { IsString, MinLength, Matches } from 'class-validator';
+
+export class ChangePasswordDto {
+  @IsString()
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase and number',
+  })
+  newPassword: string;
+}
+</file>
+
+<file path="src/auth/dto/forgot-password.dto.ts">
+import { IsEmail } from 'class-validator';
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+</file>
+
+<file path="src/auth/dto/login.dto.ts">
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+
+export class LoginDto {
+  @IsEmail({}, { message: 'Invalid email format' })
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password!: string;
+}
+</file>
+
+<file path="src/auth/dto/register.dto.ts">
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsOptional,
+  Matches,
+} from 'class-validator';
+import { UserRole } from '../../users/user.entity';
+
+export class RegisterDto {
+  @IsEmail({}, { message: 'Invalid email format' })
+  email!: string;
+
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase and number',
+  })
+  password!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
+}
+</file>
+
+<file path="src/auth/dto/reset-password.dto.ts">
+import { IsString, MinLength, Matches } from 'class-validator';
+
+export class ResetPasswordDto {
+  @IsString()
+  email: string;
+
+  @IsString()
+  token: string;
+
+  @IsString()
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase and number',
+  })
+  newPassword: string;
+}
+</file>
+
+<file path="src/auth/guards/jwt-auth.guard.ts">
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {}
+</file>
+
+<file path="src/auth/guards/jwt-refresh.guard.ts">
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class JwtRefreshGuard extends AuthGuard('jwt-refresh') {}
+</file>
+
+<file path="src/auth/guards/roles.guard.ts">
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { UserRole } from '../../users/user.entity';
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.get<UserRole[]>(
+      'roles',
+      context.getHandler(),
+    );
+    if (!requiredRoles) return true;
+
+    const { user } = context.switchToHttp().getRequest();
+    if (!requiredRoles.includes(user.role)) {
+      throw new ForbiddenException('Access denied');
+    }
+    return true;
+  }
+}
+</file>
+
+<file path="src/auth/refresh-token.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../users/user.entity';
+
+@Entity('refresh_tokens')
+export class RefreshToken {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  token: string;
+
+  @Column()
+  userId: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @Column({ nullable: true })
+  deviceInfo: string;
+
+  @Column({ default: false })
+  isRevoked: boolean;
+
+  @Column()
+  expiresAt: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}
+</file>
+
+<file path="src/auth/strategies/jwt-refresh.strategy.ts">
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../users/user.entity';
+import { Request } from 'express';
+
+@Injectable()
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
+  constructor(
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: Request) => req?.cookies?.refresh_token,
+      ]),
+      secretOrKey: process.env.JWT_REFRESH_SECRET!,
+      passReqToCallback: true,
+      ignoreExpiration: false,
+    });
+  }
+
+  async validate(req: Request, payload: { sub: string }) {
+    const refreshToken = req?.cookies?.refresh_token;
+    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+    if (!user) throw new UnauthorizedException('User not found');
+    (user as any).refreshToken = refreshToken;
+    return user;
+  }
+}
+</file>
+
+<file path="src/auth/strategies/jwt.strategy.ts">
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../users/user.entity';
+import { Request } from 'express';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  constructor(
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: process.env.JWT_ACCESS_SECRET!,
+      ignoreExpiration: false,
+      passReqToCallback: true,
+    });
+  }
+
+  async validate(
+    req: Request,
+    payload: { sub: string; email: string; role: string },
+  ) {
+    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+    if (!user) throw new UnauthorizedException('User not found');
+    return user;
+  }
+}
+</file>
+
+<file path="src/common/filters/http-exception.filter.ts">
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import type { Request, Response } from 'express';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const message =
+      exception instanceof HttpException
+        ? exception.getResponse()
+        : 'Internal server error';
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      message:
+        typeof message === 'object' && 'message' in (message as object)
+          ? (message as any).message
+          : message,
+    });
+  }
+}
+</file>
+
+<file path="src/database/data-source.ts">
+import 'dotenv/config';
+import { DataSource } from 'typeorm';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+import { Task } from '../tasks/task.entity';
+import { RefreshToken } from '../auth/refresh-token.entity';
+
+// Used ONLY by the TypeORM CLI (migration:generate / migration:run / migration:revert).
+// The running app still uses the async config in app.module.ts.
+export const AppDataSource = new DataSource({
+  type: 'postgres',
+  host: process.env.DATABASE_HOST,
+  port: Number(process.env.DATABASE_PORT ?? 5432),
+  username: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
+  ssl:
+    process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  entities: [User, Project, Task, RefreshToken],
+  migrations: ['src/database/migrations/*.ts'],
+  synchronize: false,
+});
+</file>
+
+<file path="src/database/migrations/1706500000000-InitSchema.ts">
+import { MigrationInterface, QueryRunner } from 'typeorm';
+
+export class InitSchema1706500000000 implements MigrationInterface {
+  name = 'InitSchema1706500000000';
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`);
+
+    await queryRunner.query(
+      `CREATE TYPE "users_role_enum" AS ENUM ('admin', 'member')`,
+    );
+    await queryRunner.query(`
+      CREATE TABLE "users" (
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+        "name" varchar NOT NULL,
+        "email" varchar NOT NULL,
+        "password" varchar NOT NULL,
+        "role" "users_role_enum" NOT NULL DEFAULT 'member',
+        "loginAttempts" integer NOT NULL DEFAULT 0,
+        "lockedUntil" TIMESTAMP,
+        "resetPasswordToken" varchar,
+        "resetPasswordExpiry" TIMESTAMP,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "UQ_users_email" UNIQUE ("email"),
+        CONSTRAINT "PK_users_id" PRIMARY KEY ("id")
+      )
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE "projects" (
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+        "name" varchar NOT NULL,
+        "description" varchar,
+        "created_by" uuid NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "PK_projects_id" PRIMARY KEY ("id"),
+        CONSTRAINT "FK_projects_created_by" FOREIGN KEY ("created_by")
+          REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+      )
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE "project_members" (
+        "project_id" uuid NOT NULL,
+        "user_id" uuid NOT NULL,
+        CONSTRAINT "PK_project_members" PRIMARY KEY ("project_id", "user_id"),
+        CONSTRAINT "FK_project_members_project" FOREIGN KEY ("project_id")
+          REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT "FK_project_members_user" FOREIGN KEY ("user_id")
+          REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    await queryRunner.query(
+      `CREATE TYPE "tasks_status_enum" AS ENUM ('todo', 'in_progress', 'done')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "tasks_priority_enum" AS ENUM ('low', 'medium', 'high')`,
+    );
+    await queryRunner.query(`
+      CREATE TABLE "tasks" (
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+        "title" varchar NOT NULL,
+        "description" varchar,
+        "status" "tasks_status_enum" NOT NULL DEFAULT 'todo',
+        "priority" "tasks_priority_enum" NOT NULL DEFAULT 'medium',
+        "dueDate" TIMESTAMP,
+        "project_id" uuid NOT NULL,
+        "creator_id" uuid NOT NULL,
+        "assignee_id" uuid,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "PK_tasks_id" PRIMARY KEY ("id"),
+        CONSTRAINT "FK_tasks_project" FOREIGN KEY ("project_id")
+          REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+        CONSTRAINT "FK_tasks_creator" FOREIGN KEY ("creator_id")
+          REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION,
+        CONSTRAINT "FK_tasks_assignee" FOREIGN KEY ("assignee_id")
+          REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+      )
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE "refresh_tokens" (
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+        "token" varchar NOT NULL,
+        "userId" uuid NOT NULL,
+        "deviceInfo" varchar,
+        "isRevoked" boolean NOT NULL DEFAULT false,
+        "expiresAt" TIMESTAMP NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "PK_refresh_tokens_id" PRIMARY KEY ("id"),
+        CONSTRAINT "FK_refresh_tokens_user" FOREIGN KEY ("userId")
+          REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION
+      )
+    `);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TABLE "refresh_tokens"`);
+    await queryRunner.query(`DROP TABLE "tasks"`);
+    await queryRunner.query(`DROP TYPE "tasks_priority_enum"`);
+    await queryRunner.query(`DROP TYPE "tasks_status_enum"`);
+    await queryRunner.query(`DROP TABLE "project_members"`);
+    await queryRunner.query(`DROP TABLE "projects"`);
+    await queryRunner.query(`DROP TABLE "users"`);
+    await queryRunner.query(`DROP TYPE "users_role_enum"`);
+  }
+}
+</file>
+
+<file path="src/database/seed.ts">
+import { NestFactory } from '@nestjs/core';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
+import { AppModule } from '../app.module';
+import { User, UserRole } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+import { Task, TaskStatus, TaskPriority } from '../tasks/task.entity';
+
+async function bootstrap() {
+  const app = await NestFactory.createApplicationContext(AppModule);
+
+  const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
+  const projectRepo = app.get<Repository<Project>>(getRepositoryToken(Project));
+  const taskRepo = app.get<Repository<Task>>(getRepositoryToken(Task));
+
+  console.log('Seeding database...');
+
+  // ---- Users ----
+  let admin = await userRepo.findOne({ where: { email: 'admin@test.com' } });
+  if (!admin) {
+    admin = userRepo.create({
+      name: 'Admin User',
+      email: 'admin@test.com',
+      password: await bcrypt.hash('Admin1234', 12),
+      role: UserRole.ADMIN,
+    });
+    admin = await userRepo.save(admin);
+    console.log('✔ Created admin@test.com / Admin1234');
+  } else {
+    console.log('- Admin already exists, skipping');
+  }
+
+  let member = await userRepo.findOne({ where: { email: 'member@test.com' } });
+  if (!member) {
+    member = userRepo.create({
+      name: 'Member User',
+      email: 'member@test.com',
+      password: await bcrypt.hash('Member1234', 12),
+      role: UserRole.MEMBER,
+    });
+    member = await userRepo.save(member);
+    console.log('✔ Created member@test.com / Member1234');
+  } else {
+    console.log('- Member already exists, skipping');
+  }
+
+  // ---- Project ----
+  let project = await projectRepo.findOne({
+    where: { name: 'Demo Project' },
+    relations: {
+      members: true,
+      createdBy: true,
+    },
+  });
+  if (!project) {
+    project = projectRepo.create({
+      name: 'Demo Project',
+      description: 'Seeded demo project for reviewers',
+      createdBy: admin,
+      members: [admin, member],
+    });
+    project = await projectRepo.save(project);
+    console.log('✔ Created "Demo Project"');
+  } else {
+    console.log('- Demo Project already exists, skipping');
+  }
+
+  // ---- Tasks ----
+  const existingTasksCount = await taskRepo.count({
+    where: { project: { id: project.id } },
+  });
+  if (existingTasksCount === 0) {
+    const demoTasks = [
+      {
+        title: 'Set up repo',
+        status: TaskStatus.DONE,
+        priority: TaskPriority.HIGH,
+        assignee: admin,
+      },
+      {
+        title: 'Design DB schema',
+        status: TaskStatus.IN_PROGRESS,
+        priority: TaskPriority.HIGH,
+        assignee: member,
+      },
+      {
+        title: 'Build frontend',
+        status: TaskStatus.TODO,
+        priority: TaskPriority.MEDIUM,
+        assignee: member,
+      },
+    ];
+
+    for (const t of demoTasks) {
+      const task = taskRepo.create({ ...t, project, creator: admin });
+      await taskRepo.save(task);
+    }
+    console.log(`✔ Created ${demoTasks.length} demo tasks`);
+  } else {
+    console.log('- Tasks already exist, skipping');
+  }
+
+  console.log('Seeding done.');
+  await app.close();
+}
+
+bootstrap().catch((err) => {
+  console.error('Seeding failed:', err);
+  process.exit(1);
+});
+</file>
+
+<file path="src/main.ts">
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Cookie parser
+  app.use(cookieParser());
+
+  // Global prefix
+  app.setGlobalPrefix('api');
+
+  // Validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  const config = new DocumentBuilder()
+    .setTitle('Taskboard API')
+    .setDescription('Task management application API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  // CORS
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  });
+
+  await app.listen(process.env.PORT ?? 3001);
+  console.log(
+    `Application running on: http://localhost:${process.env.PORT ?? 3001}/api`,
+  );
+  console.log(
+    `Swagger docs: http://localhost:${process.env.PORT ?? 3001}/api/docs`,
+  );
+}
+
+bootstrap();
+</file>
+
+<file path="src/projects/dto/add-member.dto.ts">
+import { IsUUID } from 'class-validator';
+
+export class AddMemberDto {
+  @IsUUID()
+  userId: string;
+}
+</file>
+
+<file path="src/projects/dto/create-project.dto.ts">
+import { IsString, IsOptional } from 'class-validator';
+
+export class CreateProjectDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+}
+</file>
+
+<file path="src/projects/dto/update-project.dto.ts">
+import { IsString, IsOptional } from 'class-validator';
+
+export class UpdateProjectDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+}
+</file>
+
+<file path="src/projects/project.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../users/user.entity';
+
+@Entity('projects')
+export class Project {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  name: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @ManyToMany(() => User)
+  @JoinTable({
+    name: 'project_members',
+    joinColumn: { name: 'project_id' },
+    inverseJoinColumn: { name: 'user_id' },
+  })
+  members: User[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+</file>
+
+<file path="src/projects/projects.controller.ts">
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ProjectsService } from './projects.service';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { AddMemberDto } from './dto/add-member.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/user.entity';
+
+@UseGuards(JwtAuthGuard)
+@Controller('projects')
+export class ProjectsController {
+  constructor(private projectsService: ProjectsService) {}
+
+  @Post()
+  create(@Body() dto: CreateProjectDto, @CurrentUser() user: User) {
+    return this.projectsService.create(dto, user);
+  }
+
+  @Get()
+  findAll(@CurrentUser() user: User) {
+    return this.projectsService.findAll(user);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.projectsService.findOne(id, user);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProjectDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectsService.update(id, dto, user);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.projectsService.remove(id, user);
+  }
+
+  @Post(':id/members')
+  addMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddMemberDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectsService.addMember(id, dto, user);
+  }
+
+  @Delete(':id/members/:userId')
+  removeMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectsService.removeMember(id, userId, user);
+  }
+}
+</file>
+
+<file path="src/projects/projects.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProjectsService } from './projects.service';
+import { ProjectsController } from './projects.controller';
+import { Project } from './project.entity';
+import { User } from '../users/user.entity';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Project, User])],
+  providers: [ProjectsService],
+  controllers: [ProjectsController],
+  exports: [ProjectsService],
+})
+export class ProjectsModule {}
+</file>
+
+<file path="src/projects/projects.service.spec.ts">
+import { Test, TestingModule } from '@nestjs/testing';
+import { ProjectsService } from './projects.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Project } from './project.entity';
+import { User, UserRole } from '../users/user.entity';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+
+const mockProjectRepo = () => ({
+  create: jest.fn(),
+  save: jest.fn(),
+  findOne: jest.fn(),
+  remove: jest.fn(),
+  createQueryBuilder: jest.fn(),
+});
+
+const mockUserRepo = () => ({
+  findOne: jest.fn(),
+});
+
+const makeUser = (id: string): User =>
+  ({
+    id,
+    name: 'User',
+    email: `${id}@test.com`,
+    role: UserRole.MEMBER,
+  }) as User;
+
+describe('ProjectsService', () => {
+  let service: ProjectsService;
+  let projectRepo: ReturnType<typeof mockProjectRepo>;
+  let userRepo: ReturnType<typeof mockUserRepo>;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ProjectsService,
+        { provide: getRepositoryToken(Project), useFactory: mockProjectRepo },
+        { provide: getRepositoryToken(User), useFactory: mockUserRepo },
+      ],
+    }).compile();
+
+    service = module.get<ProjectsService>(ProjectsService);
+    projectRepo = module.get(getRepositoryToken(Project));
+    userRepo = module.get(getRepositoryToken(User));
+  });
+
+  // TEST 3 — Only project admin can update
+  describe('update', () => {
+    it('should throw ForbiddenException if non-admin tries to update', async () => {
+      const owner = makeUser('owner-id');
+      const otherUser = makeUser('other-id');
+
+      const project: Partial<Project> = {
+        id: 'proj-1',
+        name: 'Test Project',
+        createdBy: owner,
+        members: [owner, otherUser],
+      };
+
+      // Mock findOne via queryBuilder
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(project),
+      };
+      projectRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await expect(
+        service.update('proj-1', { name: 'New Name' }, otherUser),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // TEST 4 — Cannot remove project creator from members
+  describe('removeMember', () => {
+    it('should throw ForbiddenException when trying to remove the creator', async () => {
+      const owner = makeUser('owner-id');
+      const member = makeUser('member-id');
+
+      const project: Partial<Project> = {
+        id: 'proj-1',
+        createdBy: owner,
+        members: [owner, member],
+      };
+
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(project),
+      };
+      projectRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await expect(
+        service.removeMember('proj-1', 'owner-id', owner),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // TEST 5 — Non-member cannot access project
+  describe('findOne', () => {
+    it('should throw ForbiddenException if user is not a member', async () => {
+      const owner = makeUser('owner-id');
+      const stranger = makeUser('stranger-id');
+
+      const project: Partial<Project> = {
+        id: 'proj-1',
+        createdBy: owner,
+        members: [owner],
+      };
+
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(project),
+      };
+      projectRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await expect(service.findOne('proj-1', stranger)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+  });
+});
+</file>
+
+<file path="src/projects/projects.service.ts">
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Project } from './project.entity';
+import { User } from '../users/user.entity';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { AddMemberDto } from './dto/add-member.dto';
+
+@Injectable()
+export class ProjectsService {
+  constructor(
+    @InjectRepository(Project)
+    private projectRepo: Repository<Project>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {}
+
+  // ==================== CREATE ====================
+  async create(dto: CreateProjectDto, currentUser: User): Promise<Project> {
+    const project = this.projectRepo.create({
+      name: dto.name,
+      description: dto.description,
+      createdBy: currentUser,
+      members: [currentUser],
+    });
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== FIND ALL (mine only) ====================
+  async findAll(currentUser: User): Promise<Project[]> {
+    return this.projectRepo
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.createdBy', 'creator')
+      .leftJoinAndSelect('project.members', 'members')
+      .where('members.id = :userId', { userId: currentUser.id })
+      .orderBy('project.createdAt', 'DESC')
+      .getMany();
+  }
+
+  // ==================== FIND ONE ====================
+  async findOne(id: string, currentUser: User): Promise<Project> {
+    const project = await this.projectRepo
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.createdBy', 'creator')
+      .leftJoinAndSelect('project.members', 'members')
+      .where('project.id = :id', { id })
+      .getOne();
+
+    if (!project) throw new NotFoundException('Project not found');
+    this.checkMembership(project, currentUser);
+    return project;
+  }
+
+  // ==================== UPDATE ====================
+  async update(
+    id: string,
+    dto: UpdateProjectDto,
+    currentUser: User,
+  ): Promise<Project> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+
+    Object.assign(project, dto);
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== DELETE ====================
+  async remove(id: string, currentUser: User): Promise<void> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+    await this.projectRepo.remove(project);
+  }
+
+  // ==================== ADD MEMBER ====================
+  async addMember(
+    id: string,
+    dto: AddMemberDto,
+    currentUser: User,
+  ): Promise<Project> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+
+    const userToAdd = await this.userRepo.findOne({
+      where: { id: dto.userId },
+    });
+    if (!userToAdd) throw new NotFoundException('User not found');
+
+    const alreadyMember = project.members.some((m) => m.id === dto.userId);
+    if (alreadyMember) throw new ConflictException('User is already a member');
+
+    project.members.push(userToAdd);
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== REMOVE MEMBER ====================
+  async removeMember(
+    id: string,
+    userId: string,
+    currentUser: User,
+  ): Promise<Project> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+
+    if (userId === project.createdBy.id) {
+      throw new ForbiddenException('Cannot remove the project creator');
+    }
+
+    project.members = project.members.filter((m) => m.id !== userId);
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== HELPERS ====================
+  private checkMembership(project: Project, user: User): void {
+    const isMember = project.members.some((m) => m.id === user.id);
+    if (!isMember)
+      throw new ForbiddenException('You are not a member of this project');
+  }
+
+  isAdmin(project: Project, user: User): boolean {
+    return project.createdBy.id === user.id;
+  }
+
+  private checkAdmin(project: Project, user: User): void {
+    if (!this.isAdmin(project, user)) {
+      throw new ForbiddenException(
+        'Only the project admin can perform this action',
+      );
+    }
+  }
+}
+</file>
+
+<file path="src/repomix-output.xml">
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+app.module.ts
+auth/auth.controller.ts
+auth/auth.module.ts
+auth/auth.service.ts
+auth/decorators/current-user.decorator.ts
+auth/decorators/roles.decorator.ts
+auth/dto/change-password.dto.ts
+auth/dto/forgot-password.dto.ts
+auth/dto/login.dto.ts
+auth/dto/register.dto.ts
+auth/dto/reset-password.dto.ts
+auth/guards/jwt-auth.guard.ts
+auth/guards/jwt-refresh.guard.ts
+auth/guards/roles.guard.ts
+auth/refresh-token.entity.ts
+auth/strategies/jwt-refresh.strategy.ts
+auth/strategies/jwt.strategy.ts
+common/filters/http-exception.filter.ts
+main.ts
+projects/dto/add-member.dto.ts
+projects/dto/create-project.dto.ts
+projects/dto/update-project.dto.ts
+projects/project.entity.ts
+projects/projects.controller.ts
+projects/projects.module.ts
+projects/projects.service.ts
+tasks/dto/create-task.dto.ts
+tasks/dto/filter-task.dto.ts
+tasks/dto/update-task.dto.ts
+tasks/task.entity.ts
+tasks/tasks.controller.ts
+tasks/tasks.module.ts
+tasks/tasks.service.ts
+users/user.entity.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app.module.ts">
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get('DATABASE_HOST'),
+        port: +configService.get<number>('DATABASE_PORT', 5432),
+        username: configService.get('DATABASE_USER'),
+        password: configService.get('DATABASE_PASSWORD'),
+        database: configService.get('DATABASE_NAME'),
+        autoLoadEntities: true,
+        synchronize: true,
+      }),
+      inject: [ConfigService],
+    }),
+    AuthModule,
+    ProjectsModule,
+    TasksModule,
+  ],
+})
+export class AppModule {}
+</file>
+
+<file path="auth/auth.controller.ts">
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from '../users/user.entity';
+import type { Response, Request } from 'express';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private authService: AuthService) {}
+
+  @Post('register')
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  @Post('login')
+  login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
+    const deviceInfo = req.headers['user-agent'];
+    return this.authService.login(dto, res, deviceInfo);
+  }
+
+  @UseGuards(JwtRefreshGuard)
+  @Post('refresh')
+  refresh(@CurrentUser() user: any, @Res({ passthrough: true }) res: Response) {
+    return this.authService.refresh(user.id, user.refreshToken, res);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req?.cookies?.refresh_token;
+    return this.authService.logout(res, refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout-all')
+  logoutAll(
+    @CurrentUser() user: User,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.logoutAll(user.id, res);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  me(@CurrentUser() user: User) {
+    return this.authService.me(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  changePassword(@Body() dto: ChangePasswordDto, @CurrentUser() user: User) {
+    return this.authService.changePassword(dto, user.id);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+}
+</file>
+
+<file path="auth/auth.module.ts">
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { User } from '../users/user.entity';
+import { RefreshToken } from './refresh-token.entity';
+
+@Module({
+  imports: [
+    PassportModule,
+    JwtModule.register({}),
+    TypeOrmModule.forFeature([User, RefreshToken]),
+  ],
+  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
+  controllers: [AuthController],
+})
+export class AuthModule {}
+</file>
+
+<file path="auth/auth.service.ts">
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
+import { User } from '../users/user.entity';
+import { RefreshToken } from './refresh-token.entity';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { Response } from 'express';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepo: Repository<RefreshToken>,
+    private jwt: JwtService,
+  ) {}
+
+  // ==================== TOKENS ====================
+
+  private generateAccessToken(user: User) {
+    return this.jwt.sign(
+      { sub: user.id, email: user.email, role: user.role },
+      { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' },
+    );
+  }
+
+  private generateRefreshToken(userId: string) {
+    return this.jwt.sign(
+      { sub: userId },
+      { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' },
+    );
+  }
+
+  private setRefreshTokenCookie(res: Response, token: string) {
+    res.cookie('refresh_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  }
+
+  private async saveRefreshToken(
+    userId: string,
+    token: string,
+    deviceInfo?: string,
+  ) {
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    if (deviceInfo) {
+      await this.refreshTokenRepo.update(
+        { userId, deviceInfo, isRevoked: false },
+        { isRevoked: true },
+      );
+    }
+    const hashed = await bcrypt.hash(token, 10);
+    const refreshToken = this.refreshTokenRepo.create({
+      userId,
+      token: hashed,
+      expiresAt,
+      deviceInfo,
+    });
+    return this.refreshTokenRepo.save(refreshToken);
+  }
+
+  // ==================== REGISTER ====================
+
+  async register(dto: RegisterDto) {
+    const exists = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (exists) throw new ConflictException('Email already in use');
+
+    const hashed = await bcrypt.hash(dto.password, 12);
+    const user = this.userRepo.create({ ...dto, password: hashed });
+    await this.userRepo.save(user);
+
+    return { message: 'Registered successfully. Please login.' };
+  }
+
+  // ==================== LOGIN ====================
+
+  async login(dto: LoginDto, res: Response, deviceInfo?: string) {
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const minutesLeft = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 60000,
+      );
+      throw new UnauthorizedException(
+        `Account locked. Try again in ${minutesLeft} minutes.`,
+      );
+    }
+
+    const valid = await bcrypt.compare(dto.password, user.password);
+    if (!valid) {
+      user.loginAttempts += 1;
+      if (user.loginAttempts >= 5) {
+        user.lockedUntil = new Date(Date.now() + 30 * 60 * 1000);
+        user.loginAttempts = 0;
+        await this.userRepo.save(user);
+        throw new UnauthorizedException('Account locked for 30 minutes.');
+      }
+      await this.userRepo.save(user);
+      throw new UnauthorizedException(
+        `Invalid credentials. ${5 - user.loginAttempts} attempts remaining.`,
+      );
+    }
+
+    user.loginAttempts = 0;
+    user.lockedUntil = null;
+    await this.userRepo.save(user);
+
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user.id);
+    await this.saveRefreshToken(user.id, refreshToken, deviceInfo);
+    this.setRefreshTokenCookie(res, refreshToken);
+
+    return {
+      access_token: accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    };
+  }
+
+  // ==================== REFRESH ====================
+
+  async refresh(userId: string, rawToken: string, res: Response) {
+    const activeTokens = await this.refreshTokenRepo.find({
+      where: { userId, isRevoked: false },
+    });
+
+    let matchedToken: RefreshToken | null = null;
+    for (const t of activeTokens) {
+      const isMatch = await bcrypt.compare(rawToken, t.token);
+      if (isMatch) {
+        matchedToken = t;
+        break;
+      }
+    }
+
+    if (!matchedToken || matchedToken.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+
+    matchedToken.isRevoked = true;
+    await this.refreshTokenRepo.save(matchedToken);
+
+    const accessToken = this.generateAccessToken(user);
+    const newRefreshToken = this.generateRefreshToken(user.id);
+    await this.saveRefreshToken(
+      user.id,
+      newRefreshToken,
+      matchedToken.deviceInfo,
+    );
+    this.setRefreshTokenCookie(res, newRefreshToken);
+
+    return { access_token: accessToken };
+  }
+
+  // ==================== LOGOUT ====================
+
+  async logout(res: Response, rawRefreshToken?: string) {
+    if (rawRefreshToken) {
+      const activeTokens = await this.refreshTokenRepo.find({
+        where: { isRevoked: false },
+      });
+      for (const t of activeTokens) {
+        const isMatch = await bcrypt.compare(rawRefreshToken, t.token);
+        if (isMatch) {
+          t.isRevoked = true;
+          await this.refreshTokenRepo.save(t);
+          break;
+        }
+      }
+    }
+    res.clearCookie('refresh_token');
+    return { message: 'Logged out successfully' };
+  }
+
+  // ==================== LOGOUT ALL ====================
+
+  async logoutAll(userId: string, res: Response) {
+    await this.refreshTokenRepo.update(
+      { userId, isRevoked: false },
+      { isRevoked: true },
+    );
+    res.clearCookie('refresh_token');
+    return { message: 'Logged out from all devices successfully' };
+  }
+
+  // ==================== ME ====================
+
+  async me(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    const { password, ...result } = user;
+    return result;
+  }
+
+  // ==================== CHANGE PASSWORD ====================
+
+  async changePassword(dto: ChangePasswordDto, userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const valid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!valid) throw new BadRequestException('Current password is incorrect');
+
+    user.password = await bcrypt.hash(dto.newPassword, 12);
+    await this.userRepo.save(user);
+
+    await this.refreshTokenRepo.update(
+      { userId, isRevoked: false },
+      { isRevoked: true },
+    );
+    return { message: 'Password changed successfully. Please login again.' };
+  }
+
+  // ==================== FORGOT PASSWORD ====================
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (!user)
+      return { message: 'If this email exists, a reset code has been sent.' };
+
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetPasswordToken = token;
+    user.resetPasswordExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    await this.userRepo.save(user);
+
+    // TODO: send email
+    console.log(`Reset token for ${user.email}: ${token}`);
+    return { message: 'If this email exists, a reset code has been sent.' };
+  }
+
+  // ==================== RESET PASSWORD ====================
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+
+    if (
+      !user ||
+      !user.resetPasswordToken ||
+      !user.resetPasswordExpiry ||
+      user.resetPasswordToken !== dto.token ||
+      user.resetPasswordExpiry < new Date()
+    ) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    user.password = await bcrypt.hash(dto.newPassword, 12);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpiry = null;
+    user.loginAttempts = 0;
+    user.lockedUntil = null;
+    await this.userRepo.save(user);
+
+    await this.refreshTokenRepo.update(
+      { userId: user.id, isRevoked: false },
+      { isRevoked: true },
+    );
+    return { message: 'Password reset successfully. Please login again.' };
+  }
+}
+</file>
+
+<file path="auth/decorators/current-user.decorator.ts">
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+
+export const CurrentUser = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.user;
+  },
+);
+</file>
+
+<file path="auth/decorators/roles.decorator.ts">
+import { SetMetadata } from '@nestjs/common';
+import { UserRole } from '../../users/user.entity';
+
+export const Roles = (...roles: UserRole[]) => SetMetadata('roles', roles);
+</file>
+
+<file path="auth/dto/change-password.dto.ts">
+import { IsString, MinLength, Matches } from 'class-validator';
+
+export class ChangePasswordDto {
+  @IsString()
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase and number',
+  })
+  newPassword: string;
+}
+</file>
+
+<file path="auth/dto/forgot-password.dto.ts">
+import { IsEmail } from 'class-validator';
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+</file>
+
+<file path="auth/dto/login.dto.ts">
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+
+export class LoginDto {
+  @IsEmail({}, { message: 'Invalid email format' })
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password!: string;
+}
+</file>
+
+<file path="auth/dto/register.dto.ts">
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsOptional,
+  Matches,
+} from 'class-validator';
+import { UserRole } from '../../users/user.entity';
+
+export class RegisterDto {
+  @IsEmail({}, { message: 'Invalid email format' })
+  email!: string;
+
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase and number',
+  })
+  password!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
+}
+</file>
+
+<file path="auth/dto/reset-password.dto.ts">
+import { IsString, MinLength, Matches } from 'class-validator';
+
+export class ResetPasswordDto {
+  @IsString()
+  email: string;
+
+  @IsString()
+  token: string;
+
+  @IsString()
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase and number',
+  })
+  newPassword: string;
+}
+</file>
+
+<file path="auth/guards/jwt-auth.guard.ts">
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {}
+</file>
+
+<file path="auth/guards/jwt-refresh.guard.ts">
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class JwtRefreshGuard extends AuthGuard('jwt-refresh') {}
+</file>
+
+<file path="auth/guards/roles.guard.ts">
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { UserRole } from '../../users/user.entity';
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.get<UserRole[]>(
+      'roles',
+      context.getHandler(),
+    );
+    if (!requiredRoles) return true;
+
+    const { user } = context.switchToHttp().getRequest();
+    if (!requiredRoles.includes(user.role)) {
+      throw new ForbiddenException('Access denied');
+    }
+    return true;
+  }
+}
+</file>
+
+<file path="auth/refresh-token.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../users/user.entity';
+
+@Entity('refresh_tokens')
+export class RefreshToken {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  token: string;
+
+  @Column()
+  userId: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @Column({ nullable: true })
+  deviceInfo: string;
+
+  @Column({ default: false })
+  isRevoked: boolean;
+
+  @Column()
+  expiresAt: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}
+</file>
+
+<file path="auth/strategies/jwt-refresh.strategy.ts">
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../users/user.entity';
+import { Request } from 'express';
+
+@Injectable()
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
+  constructor(
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: Request) => req?.cookies?.refresh_token,
+      ]),
+      secretOrKey: process.env.JWT_REFRESH_SECRET!,
+      passReqToCallback: true,
+      ignoreExpiration: false,
+    });
+  }
+
+  async validate(req: Request, payload: { sub: string }) {
+    const refreshToken = req?.cookies?.refresh_token;
+    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+    if (!user) throw new UnauthorizedException('User not found');
+    (user as any).refreshToken = refreshToken;
+    return user;
+  }
+}
+</file>
+
+<file path="auth/strategies/jwt.strategy.ts">
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../users/user.entity';
+import { Request } from 'express';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  constructor(
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: process.env.JWT_ACCESS_SECRET!,
+      ignoreExpiration: false,
+      passReqToCallback: true,
+    });
+  }
+
+  async validate(
+    req: Request,
+    payload: { sub: string; email: string; role: string },
+  ) {
+    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+    if (!user) throw new UnauthorizedException('User not found');
+    return user;
+  }
+}
+</file>
+
+<file path="common/filters/http-exception.filter.ts">
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import type { Request, Response } from 'express';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const message =
+      exception instanceof HttpException
+        ? exception.getResponse()
+        : 'Internal server error';
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      message:
+        typeof message === 'object' && 'message' in (message as object)
+          ? (message as any).message
+          : message,
+    });
+  }
+}
+</file>
+
+<file path="main.ts">
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Cookie parser
+  app.use(cookieParser());
+
+  // Global prefix
+  app.setGlobalPrefix('api');
+
+  // Validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  const config = new DocumentBuilder()
+    .setTitle('Taskboard API')
+    .setDescription('Task management application API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  // CORS
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  });
+
+  await app.listen(process.env.PORT ?? 3001);
+  console.log(
+    `Application running on: http://localhost:${process.env.PORT ?? 3001}/api`,
+  );
+  console.log(
+    `Swagger docs: http://localhost:${process.env.PORT ?? 3001}/api/docs`,
+  );
+}
+
+bootstrap();
+</file>
+
+<file path="projects/dto/add-member.dto.ts">
+import { IsUUID } from 'class-validator';
+
+export class AddMemberDto {
+  @IsUUID()
+  userId: string;
+}
+</file>
+
+<file path="projects/dto/create-project.dto.ts">
+import { IsString, IsOptional } from 'class-validator';
+
+export class CreateProjectDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+}
+</file>
+
+<file path="projects/dto/update-project.dto.ts">
+import { IsString, IsOptional } from 'class-validator';
+
+export class UpdateProjectDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+}
+</file>
+
+<file path="projects/project.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../users/user.entity';
+
+@Entity('projects')
+export class Project {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  name: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @ManyToMany(() => User)
+  @JoinTable({
+    name: 'project_members',
+    joinColumn: { name: 'project_id' },
+    inverseJoinColumn: { name: 'user_id' },
+  })
+  members: User[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+</file>
+
+<file path="projects/projects.controller.ts">
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ProjectsService } from './projects.service';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { AddMemberDto } from './dto/add-member.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/user.entity';
+
+@UseGuards(JwtAuthGuard)
+@Controller('projects')
+export class ProjectsController {
+  constructor(private projectsService: ProjectsService) {}
+
+  @Post()
+  create(@Body() dto: CreateProjectDto, @CurrentUser() user: User) {
+    return this.projectsService.create(dto, user);
+  }
+
+  @Get()
+  findAll(@CurrentUser() user: User) {
+    return this.projectsService.findAll(user);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.projectsService.findOne(id, user);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProjectDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectsService.update(id, dto, user);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.projectsService.remove(id, user);
+  }
+
+  @Post(':id/members')
+  addMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddMemberDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectsService.addMember(id, dto, user);
+  }
+
+  @Delete(':id/members/:userId')
+  removeMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectsService.removeMember(id, userId, user);
+  }
+}
+</file>
+
+<file path="projects/projects.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProjectsService } from './projects.service';
+import { ProjectsController } from './projects.controller';
+import { Project } from './project.entity';
+import { User } from '../users/user.entity';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Project, User])],
+  providers: [ProjectsService],
+  controllers: [ProjectsController],
+  exports: [ProjectsService],
+})
+export class ProjectsModule {}
+</file>
+
+<file path="projects/projects.service.ts">
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Project } from './project.entity';
+import { User } from '../users/user.entity';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { AddMemberDto } from './dto/add-member.dto';
+
+@Injectable()
+export class ProjectsService {
+  constructor(
+    @InjectRepository(Project)
+    private projectRepo: Repository<Project>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {}
+
+  // ==================== CREATE ====================
+  async create(dto: CreateProjectDto, currentUser: User): Promise<Project> {
+    const project = this.projectRepo.create({
+      name: dto.name,
+      description: dto.description,
+      createdBy: currentUser,
+      members: [currentUser],
+    });
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== FIND ALL (mine only) ====================
+  async findAll(currentUser: User): Promise<Project[]> {
+    return this.projectRepo
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.createdBy', 'creator')
+      .leftJoinAndSelect('project.members', 'members')
+      .where('members.id = :userId', { userId: currentUser.id })
+      .orderBy('project.createdAt', 'DESC')
+      .getMany();
+  }
+
+  // ==================== FIND ONE ====================
+  async findOne(id: string, currentUser: User): Promise<Project> {
+    const project = await this.projectRepo
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.createdBy', 'creator')
+      .leftJoinAndSelect('project.members', 'members')
+      .where('project.id = :id', { id })
+      .getOne();
+
+    if (!project) throw new NotFoundException('Project not found');
+    this.checkMembership(project, currentUser);
+    return project;
+  }
+
+  // ==================== UPDATE ====================
+  async update(
+    id: string,
+    dto: UpdateProjectDto,
+    currentUser: User,
+  ): Promise<Project> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+
+    Object.assign(project, dto);
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== DELETE ====================
+  async remove(id: string, currentUser: User): Promise<void> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+    await this.projectRepo.remove(project);
+  }
+
+  // ==================== ADD MEMBER ====================
+  async addMember(
+    id: string,
+    dto: AddMemberDto,
+    currentUser: User,
+  ): Promise<Project> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+
+    const userToAdd = await this.userRepo.findOne({
+      where: { id: dto.userId },
+    });
+    if (!userToAdd) throw new NotFoundException('User not found');
+
+    const alreadyMember = project.members.some((m) => m.id === dto.userId);
+    if (alreadyMember) throw new ConflictException('User is already a member');
+
+    project.members.push(userToAdd);
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== REMOVE MEMBER ====================
+  async removeMember(
+    id: string,
+    userId: string,
+    currentUser: User,
+  ): Promise<Project> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+
+    if (userId === project.createdBy.id) {
+      throw new ForbiddenException('Cannot remove the project creator');
+    }
+
+    project.members = project.members.filter((m) => m.id !== userId);
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== HELPERS ====================
+  private checkMembership(project: Project, user: User): void {
+    const isMember = project.members.some((m) => m.id === user.id);
+    if (!isMember)
+      throw new ForbiddenException('You are not a member of this project');
+  }
+
+  isAdmin(project: Project, user: User): boolean {
+    return project.createdBy.id === user.id;
+  }
+
+  private checkAdmin(project: Project, user: User): void {
+    if (!this.isAdmin(project, user)) {
+      throw new ForbiddenException(
+        'Only the project admin can perform this action',
+      );
+    }
+  }
+}
+</file>
+
+<file path="tasks/dto/create-task.dto.ts">
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsDateString,
+} from 'class-validator';
+import { TaskStatus, TaskPriority } from '../task.entity';
+
+export class CreateTaskDto {
+  @IsString()
+  title: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsDateString()
+  @IsOptional()
+  dueDate?: Date;
+
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string;
+}
+</file>
+
+<file path="tasks/dto/filter-task.dto.ts">
+import { IsOptional, IsEnum, IsUUID } from 'class-validator';
+import { TaskStatus, TaskPriority } from '../task.entity';
+
+export class FilterTaskDto {
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string;
+}
+</file>
+
+<file path="tasks/dto/update-task.dto.ts">
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsDateString,
+} from 'class-validator';
+import { TaskStatus, TaskPriority } from '../task.entity';
+
+export class UpdateTaskDto {
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsDateString()
+  @IsOptional()
+  dueDate?: Date;
+
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string;
+}
+</file>
+
+<file path="tasks/task.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in_progress',
+  DONE = 'done',
+}
+
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+}
+
+@Entity('tasks')
+export class Task {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  title: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.TODO })
+  status: TaskStatus;
+
+  @Column({ type: 'enum', enum: TaskPriority, default: TaskPriority.MEDIUM })
+  priority: TaskPriority;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  dueDate: Date;
+
+  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'project_id' })
+  project: Project;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'creator_id' })
+  creator: User;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'assignee_id' })
+  assignee: User | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+</file>
+
+<file path="tasks/tasks.controller.ts">
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { TasksService } from './tasks.service';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { FilterTaskDto } from './dto/filter-task.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/user.entity';
+
+@UseGuards(JwtAuthGuard)
+@Controller('projects/:projectId/tasks')
+export class TasksController {
+  constructor(private tasksService: TasksService) {}
+
+  @Post()
+  create(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() dto: CreateTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.create(projectId, dto, user);
+  }
+
+  @Get()
+  findAll(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Query() filters: FilterTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.findAll(projectId, filters, user);
+  }
+
+  @Get(':taskId')
+  findOne(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.findOne(projectId, taskId, user);
+  }
+
+  @Patch(':taskId')
+  update(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Body() dto: UpdateTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.update(projectId, taskId, dto, user);
+  }
+
+  @Delete(':taskId')
+  remove(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.remove(projectId, taskId, user);
+  }
+}
+</file>
+
+<file path="tasks/tasks.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TasksService } from './tasks.service';
+import { TasksController } from './tasks.controller';
+import { Task } from './task.entity';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+import { ProjectsModule } from '../projects/projects.module';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Task, User, Project]), ProjectsModule],
+  providers: [TasksService],
+  controllers: [TasksController],
+})
+export class TasksModule {}
+</file>
+
+<file path="tasks/tasks.service.ts">
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Task } from './task.entity';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+import { ProjectsService } from '../projects/projects.service';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { FilterTaskDto } from './dto/filter-task.dto';
+
+@Injectable()
+export class TasksService {
+  constructor(
+    @InjectRepository(Task)
+    private taskRepo: Repository<Task>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    @InjectRepository(Project)
+    private projectRepo: Repository<Project>,
+    private projectsService: ProjectsService,
+  ) {}
+
+  // ==================== CREATE ====================
+  async create(
+    projectId: string,
+    dto: CreateTaskDto,
+    currentUser: User,
+  ): Promise<Task> {
+    const project = await this.projectsService.findOne(projectId, currentUser);
+
+    let assignee: User | undefined = undefined;
+    if (dto.assigneeId) {
+      const isMember = project.members.some((m) => m.id === dto.assigneeId);
+      if (!isMember)
+        throw new ForbiddenException(
+          'Assignee must be a member of the project',
+        );
+      assignee =
+        (await this.userRepo.findOne({ where: { id: dto.assigneeId } })) ??
+        undefined;
+    }
+
+    const task = this.taskRepo.create({
+      title: dto.title,
+      description: dto.description,
+      status: dto.status,
+      priority: dto.priority,
+      dueDate: dto.dueDate,
+      project,
+      creator: currentUser,
+      assignee: assignee,
+    });
+
+    return this.taskRepo.save(task);
+  }
+
+  // ==================== FIND ALL (with filters) ====================
+  async findAll(
+    projectId: string,
+    filters: FilterTaskDto,
+    currentUser: User,
+  ): Promise<Task[]> {
+    await this.projectsService.findOne(projectId, currentUser);
+
+    const query = this.taskRepo
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.creator', 'creator')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .where('task.project_id = :projectId', { projectId });
+
+    if (filters.status) {
+      query.andWhere('task.status = :status', { status: filters.status });
+    }
+    if (filters.priority) {
+      query.andWhere('task.priority = :priority', {
+        priority: filters.priority,
+      });
+    }
+    if (filters.assigneeId) {
+      query.andWhere('assignee.id = :assigneeId', {
+        assigneeId: filters.assigneeId,
+      });
+    }
+
+    return query.orderBy('task.createdAt', 'DESC').getMany();
+  }
+
+  // ==================== FIND ONE ====================
+  async findOne(
+    projectId: string,
+    taskId: string,
+    currentUser: User,
+  ): Promise<Task> {
+    await this.projectsService.findOne(projectId, currentUser);
+
+    const task = await this.taskRepo.findOne({
+      where: { id: taskId, project: { id: projectId } },
+      relations: {
+        creator: true,
+        assignee: true,
+        project: true,
+      },
+    });
+
+    if (!task) throw new NotFoundException('Task not found');
+    return task;
+  }
+
+  // ==================== UPDATE ====================
+  async update(
+    projectId: string,
+    taskId: string,
+    dto: UpdateTaskDto,
+    currentUser: User,
+  ): Promise<Task> {
+    const project = await this.projectsService.findOne(projectId, currentUser);
+    const task = await this.findOne(projectId, taskId, currentUser);
+
+    const isAdmin = this.projectsService.isAdmin(project, currentUser);
+    const isCreator = task.creator.id === currentUser.id;
+    const isAssignee = task.assignee?.id === currentUser.id;
+
+    if (!isAdmin && !isCreator && !isAssignee) {
+      throw new ForbiddenException('You cannot modify this task');
+    }
+
+    if (dto.assigneeId !== undefined) {
+      const isMember = project.members.some((m) => m.id === dto.assigneeId);
+      if (!isMember)
+        throw new ForbiddenException(
+          'Assignee must be a member of the project',
+        );
+      task.assignee = await this.userRepo.findOne({
+        where: { id: dto.assigneeId },
+      });
+    }
+
+    Object.assign(task, {
+      title: dto.title ?? task.title,
+      description: dto.description ?? task.description,
+      status: dto.status ?? task.status,
+      priority: dto.priority ?? task.priority,
+      dueDate: dto.dueDate ?? task.dueDate,
+    });
+
+    return this.taskRepo.save(task);
+  }
+
+  // ==================== DELETE ====================
+  async remove(
+    projectId: string,
+    taskId: string,
+    currentUser: User,
+  ): Promise<void> {
+    const project = await this.projectsService.findOne(projectId, currentUser);
+    const task = await this.findOne(projectId, taskId, currentUser);
+
+    const isAdmin = this.projectsService.isAdmin(project, currentUser);
+    const isCreator = task.creator.id === currentUser.id;
+
+    if (!isAdmin && !isCreator) {
+      throw new ForbiddenException('You cannot delete this task');
+    }
+
+    await this.taskRepo.remove(task);
+  }
+}
+</file>
+
+<file path="users/user.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+
+export enum UserRole {
+  ADMIN = 'admin',
+  MEMBER = 'member',
+}
+
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  name: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  password: string;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.MEMBER })
+  role: UserRole;
+
+  @Column({ default: 0 })
+  loginAttempts: number;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  lockedUntil: Date | null;
+
+  @Column({ nullable: true })
+  resetPasswordToken: string | null;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  resetPasswordExpiry: Date | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+</file>
+
+</files>
+</file>
+
+<file path="src/tasks/dto/create-task.dto.ts">
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsDateString,
+} from 'class-validator';
+import { TaskStatus, TaskPriority } from '../task.entity';
+
+export class CreateTaskDto {
+  @IsString()
+  title: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsDateString()
+  @IsOptional()
+  dueDate?: Date;
+
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string;
+}
+</file>
+
+<file path="src/tasks/dto/filter-task.dto.ts">
+import {
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsInt,
+  Min,
+  IsString,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { TaskStatus, TaskPriority } from '../task.entity';
+
+export enum TaskSortField {
+  CREATED_AT = 'createdAt',
+  DUE_DATE = 'dueDate',
+  PRIORITY = 'priority',
+  TITLE = 'title',
+}
+
+export enum SortOrder {
+  ASC = 'ASC',
+  DESC = 'DESC',
+}
+
+export class FilterTaskDto {
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string;
+
+  // Searches title + description (case-insensitive, partial match)
+  @IsString()
+  @IsOptional()
+  search?: string;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number = 1;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  limit?: number = 10;
+
+  @IsEnum(TaskSortField)
+  @IsOptional()
+  sortBy?: TaskSortField = TaskSortField.CREATED_AT;
+
+  @IsEnum(SortOrder)
+  @IsOptional()
+  sortOrder?: SortOrder = SortOrder.DESC;
+}
+</file>
+
+<file path="src/tasks/dto/update-task.dto.ts">
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsDateString,
+  ValidateIf,
+} from 'class-validator';
+import { TaskStatus, TaskPriority } from '../task.entity';
+
+export class UpdateTaskDto {
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsDateString()
+  @IsOptional()
+  dueDate?: Date;
+
+  @IsOptional()
+  @ValidateIf((o) => o.assigneeId !== null)
+  @IsUUID()
+  assigneeId?: string | null;
+}
+</file>
+
+<file path="src/tasks/task.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in_progress',
+  DONE = 'done',
+}
+
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+}
+
+@Entity('tasks')
+export class Task {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  title: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.TODO })
+  status: TaskStatus;
+
+  @Column({ type: 'enum', enum: TaskPriority, default: TaskPriority.MEDIUM })
+  priority: TaskPriority;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  dueDate: Date;
+
+  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'project_id' })
+  project: Project;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'creator_id' })
+  creator: User;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'assignee_id' })
+  assignee: User | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+</file>
+
+<file path="src/tasks/tasks.controller.ts">
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { TasksService } from './tasks.service';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { FilterTaskDto } from './dto/filter-task.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/user.entity';
+
+@UseGuards(JwtAuthGuard)
+@Controller('projects/:projectId/tasks')
+export class TasksController {
+  constructor(private tasksService: TasksService) {}
+
+  @Post()
+  create(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() dto: CreateTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.create(projectId, dto, user);
+  }
+
+  @Get()
+  findAll(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Query() filters: FilterTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.findAll(projectId, filters, user);
+  }
+
+  @Get(':taskId')
+  findOne(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.findOne(projectId, taskId, user);
+  }
+
+  @Patch(':taskId')
+  update(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Body() dto: UpdateTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.update(projectId, taskId, dto, user);
+  }
+
+  @Delete(':taskId')
+  remove(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.remove(projectId, taskId, user);
+  }
+}
+</file>
+
+<file path="src/tasks/tasks.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TasksService } from './tasks.service';
+import { TasksController } from './tasks.controller';
+import { Task } from './task.entity';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+import { ProjectsModule } from '../projects/projects.module';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Task, User, Project]), ProjectsModule],
+  providers: [TasksService],
+  controllers: [TasksController],
+})
+export class TasksModule {}
+</file>
+
+<file path="src/tasks/tasks.service.spec.ts">
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { ForbiddenException } from '@nestjs/common';
+import { TasksService } from './tasks.service';
+import { ProjectsService } from '../projects/projects.service';
+import { Task, TaskStatus } from './task.entity';
+import { User, UserRole } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+
+const mockTaskRepo = () => ({
+  create: jest.fn(),
+  save: jest.fn(),
+  findOne: jest.fn(),
+  remove: jest.fn(),
+  createQueryBuilder: jest.fn(),
+});
+
+const mockUserRepo = () => ({
+  findOne: jest.fn(),
+});
+
+const mockProjectRepo = () => ({});
+
+const mockProjectsService = () => ({
+  findOne: jest.fn(),
+  isAdmin: jest.fn(),
+});
+
+const makeUser = (id: string): User =>
+  ({
+    id,
+    name: 'User',
+    email: `${id}@test.com`,
+    role: UserRole.MEMBER,
+  }) as User;
+
+describe('TasksService', () => {
+  let service: TasksService;
+  let taskRepo: ReturnType<typeof mockTaskRepo>;
+  let projectsService: ReturnType<typeof mockProjectsService>;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        TasksService,
+        { provide: getRepositoryToken(Task), useFactory: mockTaskRepo },
+        { provide: getRepositoryToken(User), useFactory: mockUserRepo },
+        { provide: getRepositoryToken(Project), useFactory: mockProjectRepo },
+        { provide: ProjectsService, useFactory: mockProjectsService },
+      ],
+    }).compile();
+
+    service = module.get(TasksService);
+    taskRepo = module.get(getRepositoryToken(Task));
+    projectsService = module.get(ProjectsService);
+  });
+
+  // TEST 1 — Cannot assign a task to a non-member
+  describe('create', () => {
+    it('should throw ForbiddenException if assignee is not a project member', async () => {
+      const owner = makeUser('owner-id');
+      const stranger = makeUser('stranger-id');
+
+      const project: Partial<Project> = { id: 'proj-1', members: [owner] };
+      projectsService.findOne.mockResolvedValue(project);
+
+      await expect(
+        service.create(
+          'proj-1',
+          { title: 'Task', assigneeId: stranger.id } as any,
+          owner,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('update', () => {
+    // TEST 2 — Only admin/creator/assignee can update
+    it('should throw ForbiddenException if user is not admin, creator, or assignee', async () => {
+      const owner = makeUser('owner-id');
+      const creator = makeUser('creator-id');
+      const stranger = makeUser('stranger-id');
+
+      const project: Partial<Project> = {
+        id: 'proj-1',
+        createdBy: owner,
+        members: [owner, creator, stranger],
+      };
+      const task: Partial<Task> = { id: 'task-1', creator, assignee: null };
+
+      projectsService.findOne.mockResolvedValue(project);
+      projectsService.isAdmin.mockReturnValue(false);
+      taskRepo.findOne.mockResolvedValue(task);
+
+      await expect(
+        service.update('proj-1', 'task-1', { title: 'New' } as any, stranger),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    // TEST 3 — assigneeId: null clears the assignee
+    it('should allow clearing the assignee when assigneeId is null', async () => {
+      const owner = makeUser('owner-id');
+      const assignee = makeUser('assignee-id');
+
+      const project: Partial<Project> = {
+        id: 'proj-1',
+        createdBy: owner,
+        members: [owner, assignee],
+      };
+      const task: Partial<Task> = {
+        id: 'task-1',
+        creator: owner,
+        assignee,
+        title: 'Task',
+      };
+
+      projectsService.findOne.mockResolvedValue(project);
+      projectsService.isAdmin.mockReturnValue(true);
+      taskRepo.findOne.mockResolvedValue(task);
+      taskRepo.save.mockImplementation((t) => Promise.resolve(t));
+
+      const result = await service.update(
+        'proj-1',
+        'task-1',
+        { assigneeId: null } as any,
+        owner,
+      );
+
+      expect(result.assignee).toBeNull();
+    });
+  });
+
+  // TEST 4 — Only admin/creator can delete
+  describe('remove', () => {
+    it('should throw ForbiddenException if user is not admin or creator', async () => {
+      const owner = makeUser('owner-id');
+      const creator = makeUser('creator-id');
+      const stranger = makeUser('stranger-id');
+
+      const project: Partial<Project> = {
+        id: 'proj-1',
+        createdBy: owner,
+        members: [owner, creator, stranger],
+      };
+      const task: Partial<Task> = { id: 'task-1', creator };
+
+      projectsService.findOne.mockResolvedValue(project);
+      projectsService.isAdmin.mockReturnValue(false);
+      taskRepo.findOne.mockResolvedValue(task);
+
+      await expect(
+        service.remove('proj-1', 'task-1', stranger),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // TEST 5 — Filtering by status
+  describe('findAll', () => {
+    it('should filter tasks by status', async () => {
+      const owner = makeUser('owner-id');
+      const project: Partial<Project> = { id: 'proj-1', members: [owner] };
+      projectsService.findOne.mockResolvedValue(project);
+
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
+      };
+      taskRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.findAll(
+        'proj-1',
+        { status: TaskStatus.DONE } as any,
+        owner,
+      );
+
+      expect(qb.andWhere).toHaveBeenCalledWith('task.status = :status', {
+        status: TaskStatus.DONE,
+      });
+    });
+  });
+});
+</file>
+
+<file path="src/tasks/tasks.service.ts">
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Task } from './task.entity';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+import { ProjectsService } from '../projects/projects.service';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { FilterTaskDto } from './dto/filter-task.dto';
+
+@Injectable()
+export class TasksService {
+  constructor(
+    @InjectRepository(Task)
+    private taskRepo: Repository<Task>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    @InjectRepository(Project)
+    private projectRepo: Repository<Project>,
+    private projectsService: ProjectsService,
+  ) {}
+
+  // ==================== CREATE ====================
+  async create(
+    projectId: string,
+    dto: CreateTaskDto,
+    currentUser: User,
+  ): Promise<Task> {
+    const project = await this.projectsService.findOne(projectId, currentUser);
+
+    let assignee: User | undefined = undefined;
+    if (dto.assigneeId) {
+      const isMember = project.members.some((m) => m.id === dto.assigneeId);
+      if (!isMember)
+        throw new ForbiddenException(
+          'Assignee must be a member of the project',
+        );
+      assignee =
+        (await this.userRepo.findOne({ where: { id: dto.assigneeId } })) ??
+        undefined;
+    }
+
+    const task = this.taskRepo.create({
+      title: dto.title,
+      description: dto.description,
+      status: dto.status,
+      priority: dto.priority,
+      dueDate: dto.dueDate,
+      project,
+      creator: currentUser,
+      assignee: assignee,
+    });
+
+    return this.taskRepo.save(task);
+  }
+
+  // ==================== FIND ALL (with filters) ====================
+  // ==================== FIND ALL (with filters, search, sort, pagination) ====================
+  async findAll(
+    projectId: string,
+    filters: FilterTaskDto,
+    currentUser: User,
+  ): Promise<{
+    data: Task[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    await this.projectsService.findOne(projectId, currentUser);
+
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 10;
+    const sortBy = filters.sortBy ?? 'createdAt';
+    const sortOrder = filters.sortOrder ?? 'DESC';
+
+    const query = this.taskRepo
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.creator', 'creator')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .where('task.project_id = :projectId', { projectId });
+
+    if (filters.status) {
+      query.andWhere('task.status = :status', { status: filters.status });
+    }
+    if (filters.priority) {
+      query.andWhere('task.priority = :priority', {
+        priority: filters.priority,
+      });
+    }
+    if (filters.assigneeId) {
+      query.andWhere('assignee.id = :assigneeId', {
+        assigneeId: filters.assigneeId,
+      });
+    }
+    if (filters.search) {
+      query.andWhere(
+        '(task.title ILIKE :search OR task.description ILIKE :search)',
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    query
+      .orderBy(`task.${sortBy}`, sortOrder)
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+  // ==================== FIND ONE ====================
+  async findOne(
+    projectId: string,
+    taskId: string,
+    currentUser: User,
+  ): Promise<Task> {
+    await this.projectsService.findOne(projectId, currentUser);
+
+    const task = await this.taskRepo.findOne({
+      where: { id: taskId, project: { id: projectId } },
+      relations: {
+        creator: true,
+        assignee: true,
+        project: true,
+      },
+    });
+
+    if (!task) throw new NotFoundException('Task not found');
+    return task;
+  }
+
+  // ==================== UPDATE ====================
+  async update(
+    projectId: string,
+    taskId: string,
+    dto: UpdateTaskDto,
+    currentUser: User,
+  ): Promise<Task> {
+    const project = await this.projectsService.findOne(projectId, currentUser);
+    const task = await this.findOne(projectId, taskId, currentUser);
+
+    const isAdmin = this.projectsService.isAdmin(project, currentUser);
+    const isCreator = task.creator.id === currentUser.id;
+    const isAssignee = task.assignee?.id === currentUser.id;
+
+    if (!isAdmin && !isCreator && !isAssignee) {
+      throw new ForbiddenException('You cannot modify this task');
+    }
+
+    if (dto.assigneeId !== undefined) {
+      if (dto.assigneeId === null) {
+        task.assignee = null;
+      } else {
+        const isMember = project.members.some((m) => m.id === dto.assigneeId);
+        if (!isMember) {
+          throw new ForbiddenException(
+            'Assignee must be a member of the project',
+          );
+        }
+        task.assignee = await this.userRepo.findOne({
+          where: { id: dto.assigneeId },
+        });
+      }
+    }
+
+    Object.assign(task, {
+      title: dto.title ?? task.title,
+      description: dto.description ?? task.description,
+      status: dto.status ?? task.status,
+      priority: dto.priority ?? task.priority,
+      dueDate: dto.dueDate ?? task.dueDate,
+    });
+
+    return this.taskRepo.save(task);
+  }
+
+  // ==================== DELETE ====================
+  async remove(
+    projectId: string,
+    taskId: string,
+    currentUser: User,
+  ): Promise<void> {
+    const project = await this.projectsService.findOne(projectId, currentUser);
+    const task = await this.findOne(projectId, taskId, currentUser);
+
+    const isAdmin = this.projectsService.isAdmin(project, currentUser);
+    const isCreator = task.creator.id === currentUser.id;
+
+    if (!isAdmin && !isCreator) {
+      throw new ForbiddenException('You cannot delete this task');
+    }
+
+    await this.taskRepo.remove(task);
+  }
+}
+</file>
+
+<file path="src/users/user.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+
+export enum UserRole {
+  ADMIN = 'admin',
+  MEMBER = 'member',
+}
+
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  name: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  password: string;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.MEMBER })
+  role: UserRole;
+
+  @Column({ default: 0 })
+  loginAttempts: number;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  lockedUntil: Date | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  resetPasswordToken: string | null;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  resetPasswordExpiry: Date | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+</file>
+
+<file path="Taskboard-API.postman_collection.json">
+{
+  "info": {
+    "_postman_id": "b6e2a1a0-1234-4a5b-9c1d-taskboard0001",
+    "name": "Taskboard API",
+    "description": "Task management application API - auto-generated with example data",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{access_token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001/api", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "projectId", "value": "", "type": "string" },
+    { "key": "taskId", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mohamed@example.com\",\n  \"password\": \"Passw0rd123\",\n  \"name\": \"Mohamed Ali\",\n  \"role\": \"member\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.access_token) {",
+                  "        pm.collectionVariables.set('access_token', data.access_token);",
+                  "        console.log('access_token saved');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mohamed@example.com\",\n  \"password\": \"Passw0rd123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.access_token) {",
+                  "        pm.collectionVariables.set('access_token', data.access_token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] },
+            "description": "Uses the httpOnly refresh_token cookie set automatically by Postman's cookie jar after login."
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Passw0rd123\",\n  \"newPassword\": \"NewPassw0rd456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/change-password", "host": ["{{baseUrl}}"], "path": ["auth", "change-password"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mohamed@example.com\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["auth", "forgot-password"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mohamed@example.com\",\n  \"token\": \"123456\",\n  \"newPassword\": \"NewPassw0rd456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["auth", "reset-password"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout All",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/logout-all", "host": ["{{baseUrl}}"], "path": ["auth", "logout-all"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.id) { pm.collectionVariables.set('projectId', data.id); }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Website Redesign\",\n  \"description\": \"Revamp the marketing website UI/UX\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects", "host": ["{{baseUrl}}"], "path": ["projects"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects", "host": ["{{baseUrl}}"], "path": ["projects"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Website Redesign v2\",\n  \"description\": \"Updated scope for phase 2\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Member",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId}}/members", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId}}", "members"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId}}/members/{{userId}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId}}", "members", "{{userId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/{{projectId}}", "host": ["{{baseUrl}}"], "path": ["projects", "{{projectId}}"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.id) { pm.collectionVariables.set('taskId', data.id); }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Design landing page\",\n  \"description\": \"Create wireframes and high-fidelity mockups\",\n  \"status\": \"todo\",\n  \"priority\": \"high\",\n  \"dueDate\": \"2026-08-15\",\n  \"assigneeId\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "tasks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "tasks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Task By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "tasks", "{{taskId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"priority\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "tasks", "{{taskId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "tasks", "{{taskId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
+</file>
+
+<file path="tsconfig.build.json">
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false,
+    "strictPropertyInitialization": false,
+    "types": ["jest", "node"]
+  }
+}
+</file>
+
+</files>

@@ -1,0 +1,1662 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+app.module.ts
+auth/auth.controller.ts
+auth/auth.module.ts
+auth/auth.service.ts
+auth/decorators/current-user.decorator.ts
+auth/decorators/roles.decorator.ts
+auth/dto/change-password.dto.ts
+auth/dto/forgot-password.dto.ts
+auth/dto/login.dto.ts
+auth/dto/register.dto.ts
+auth/dto/reset-password.dto.ts
+auth/guards/jwt-auth.guard.ts
+auth/guards/jwt-refresh.guard.ts
+auth/guards/roles.guard.ts
+auth/refresh-token.entity.ts
+auth/strategies/jwt-refresh.strategy.ts
+auth/strategies/jwt.strategy.ts
+common/filters/http-exception.filter.ts
+main.ts
+projects/dto/add-member.dto.ts
+projects/dto/create-project.dto.ts
+projects/dto/update-project.dto.ts
+projects/project.entity.ts
+projects/projects.controller.ts
+projects/projects.module.ts
+projects/projects.service.ts
+tasks/dto/create-task.dto.ts
+tasks/dto/filter-task.dto.ts
+tasks/dto/update-task.dto.ts
+tasks/task.entity.ts
+tasks/tasks.controller.ts
+tasks/tasks.module.ts
+tasks/tasks.service.ts
+users/user.entity.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app.module.ts">
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get('DATABASE_HOST'),
+        port: +configService.get<number>('DATABASE_PORT', 5432),
+        username: configService.get('DATABASE_USER'),
+        password: configService.get('DATABASE_PASSWORD'),
+        database: configService.get('DATABASE_NAME'),
+        autoLoadEntities: true,
+        synchronize: true,
+      }),
+      inject: [ConfigService],
+    }),
+    AuthModule,
+    ProjectsModule,
+    TasksModule,
+  ],
+})
+export class AppModule {}
+</file>
+
+<file path="auth/auth.controller.ts">
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from '../users/user.entity';
+import type { Response, Request } from 'express';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private authService: AuthService) {}
+
+  @Post('register')
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  @Post('login')
+  login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
+    const deviceInfo = req.headers['user-agent'];
+    return this.authService.login(dto, res, deviceInfo);
+  }
+
+  @UseGuards(JwtRefreshGuard)
+  @Post('refresh')
+  refresh(@CurrentUser() user: any, @Res({ passthrough: true }) res: Response) {
+    return this.authService.refresh(user.id, user.refreshToken, res);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req?.cookies?.refresh_token;
+    return this.authService.logout(res, refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout-all')
+  logoutAll(
+    @CurrentUser() user: User,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.logoutAll(user.id, res);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  me(@CurrentUser() user: User) {
+    return this.authService.me(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  changePassword(@Body() dto: ChangePasswordDto, @CurrentUser() user: User) {
+    return this.authService.changePassword(dto, user.id);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+}
+</file>
+
+<file path="auth/auth.module.ts">
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { User } from '../users/user.entity';
+import { RefreshToken } from './refresh-token.entity';
+
+@Module({
+  imports: [
+    PassportModule,
+    JwtModule.register({}),
+    TypeOrmModule.forFeature([User, RefreshToken]),
+  ],
+  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
+  controllers: [AuthController],
+})
+export class AuthModule {}
+</file>
+
+<file path="auth/auth.service.ts">
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
+import { User } from '../users/user.entity';
+import { RefreshToken } from './refresh-token.entity';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { Response } from 'express';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepo: Repository<RefreshToken>,
+    private jwt: JwtService,
+  ) {}
+
+  // ==================== TOKENS ====================
+
+  private generateAccessToken(user: User) {
+    return this.jwt.sign(
+      { sub: user.id, email: user.email, role: user.role },
+      { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' },
+    );
+  }
+
+  private generateRefreshToken(userId: string) {
+    return this.jwt.sign(
+      { sub: userId },
+      { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' },
+    );
+  }
+
+  private setRefreshTokenCookie(res: Response, token: string) {
+    res.cookie('refresh_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  }
+
+  private async saveRefreshToken(
+    userId: string,
+    token: string,
+    deviceInfo?: string,
+  ) {
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    if (deviceInfo) {
+      await this.refreshTokenRepo.update(
+        { userId, deviceInfo, isRevoked: false },
+        { isRevoked: true },
+      );
+    }
+    const hashed = await bcrypt.hash(token, 10);
+    const refreshToken = this.refreshTokenRepo.create({
+      userId,
+      token: hashed,
+      expiresAt,
+      deviceInfo,
+    });
+    return this.refreshTokenRepo.save(refreshToken);
+  }
+
+  // ==================== REGISTER ====================
+
+  async register(dto: RegisterDto) {
+    const exists = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (exists) throw new ConflictException('Email already in use');
+
+    const hashed = await bcrypt.hash(dto.password, 12);
+    const user = this.userRepo.create({ ...dto, password: hashed });
+    await this.userRepo.save(user);
+
+    return { message: 'Registered successfully. Please login.' };
+  }
+
+  // ==================== LOGIN ====================
+
+  async login(dto: LoginDto, res: Response, deviceInfo?: string) {
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const minutesLeft = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 60000,
+      );
+      throw new UnauthorizedException(
+        `Account locked. Try again in ${minutesLeft} minutes.`,
+      );
+    }
+
+    const valid = await bcrypt.compare(dto.password, user.password);
+    if (!valid) {
+      user.loginAttempts += 1;
+      if (user.loginAttempts >= 5) {
+        user.lockedUntil = new Date(Date.now() + 30 * 60 * 1000);
+        user.loginAttempts = 0;
+        await this.userRepo.save(user);
+        throw new UnauthorizedException('Account locked for 30 minutes.');
+      }
+      await this.userRepo.save(user);
+      throw new UnauthorizedException(
+        `Invalid credentials. ${5 - user.loginAttempts} attempts remaining.`,
+      );
+    }
+
+    user.loginAttempts = 0;
+    user.lockedUntil = null;
+    await this.userRepo.save(user);
+
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user.id);
+    await this.saveRefreshToken(user.id, refreshToken, deviceInfo);
+    this.setRefreshTokenCookie(res, refreshToken);
+
+    return {
+      access_token: accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    };
+  }
+
+  // ==================== REFRESH ====================
+
+  async refresh(userId: string, rawToken: string, res: Response) {
+    const activeTokens = await this.refreshTokenRepo.find({
+      where: { userId, isRevoked: false },
+    });
+
+    let matchedToken: RefreshToken | null = null;
+    for (const t of activeTokens) {
+      const isMatch = await bcrypt.compare(rawToken, t.token);
+      if (isMatch) {
+        matchedToken = t;
+        break;
+      }
+    }
+
+    if (!matchedToken || matchedToken.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+
+    matchedToken.isRevoked = true;
+    await this.refreshTokenRepo.save(matchedToken);
+
+    const accessToken = this.generateAccessToken(user);
+    const newRefreshToken = this.generateRefreshToken(user.id);
+    await this.saveRefreshToken(
+      user.id,
+      newRefreshToken,
+      matchedToken.deviceInfo,
+    );
+    this.setRefreshTokenCookie(res, newRefreshToken);
+
+    return { access_token: accessToken };
+  }
+
+  // ==================== LOGOUT ====================
+
+  async logout(res: Response, rawRefreshToken?: string) {
+    if (rawRefreshToken) {
+      const activeTokens = await this.refreshTokenRepo.find({
+        where: { isRevoked: false },
+      });
+      for (const t of activeTokens) {
+        const isMatch = await bcrypt.compare(rawRefreshToken, t.token);
+        if (isMatch) {
+          t.isRevoked = true;
+          await this.refreshTokenRepo.save(t);
+          break;
+        }
+      }
+    }
+    res.clearCookie('refresh_token');
+    return { message: 'Logged out successfully' };
+  }
+
+  // ==================== LOGOUT ALL ====================
+
+  async logoutAll(userId: string, res: Response) {
+    await this.refreshTokenRepo.update(
+      { userId, isRevoked: false },
+      { isRevoked: true },
+    );
+    res.clearCookie('refresh_token');
+    return { message: 'Logged out from all devices successfully' };
+  }
+
+  // ==================== ME ====================
+
+  async me(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    const { password, ...result } = user;
+    return result;
+  }
+
+  // ==================== CHANGE PASSWORD ====================
+
+  async changePassword(dto: ChangePasswordDto, userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const valid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!valid) throw new BadRequestException('Current password is incorrect');
+
+    user.password = await bcrypt.hash(dto.newPassword, 12);
+    await this.userRepo.save(user);
+
+    await this.refreshTokenRepo.update(
+      { userId, isRevoked: false },
+      { isRevoked: true },
+    );
+    return { message: 'Password changed successfully. Please login again.' };
+  }
+
+  // ==================== FORGOT PASSWORD ====================
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (!user)
+      return { message: 'If this email exists, a reset code has been sent.' };
+
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetPasswordToken = token;
+    user.resetPasswordExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    await this.userRepo.save(user);
+
+    // TODO: send email
+    console.log(`Reset token for ${user.email}: ${token}`);
+    return { message: 'If this email exists, a reset code has been sent.' };
+  }
+
+  // ==================== RESET PASSWORD ====================
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const user = await this.userRepo.findOne({ where: { email: dto.email } });
+
+    if (
+      !user ||
+      !user.resetPasswordToken ||
+      !user.resetPasswordExpiry ||
+      user.resetPasswordToken !== dto.token ||
+      user.resetPasswordExpiry < new Date()
+    ) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    user.password = await bcrypt.hash(dto.newPassword, 12);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpiry = null;
+    user.loginAttempts = 0;
+    user.lockedUntil = null;
+    await this.userRepo.save(user);
+
+    await this.refreshTokenRepo.update(
+      { userId: user.id, isRevoked: false },
+      { isRevoked: true },
+    );
+    return { message: 'Password reset successfully. Please login again.' };
+  }
+}
+</file>
+
+<file path="auth/decorators/current-user.decorator.ts">
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+
+export const CurrentUser = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.user;
+  },
+);
+</file>
+
+<file path="auth/decorators/roles.decorator.ts">
+import { SetMetadata } from '@nestjs/common';
+import { UserRole } from '../../users/user.entity';
+
+export const Roles = (...roles: UserRole[]) => SetMetadata('roles', roles);
+</file>
+
+<file path="auth/dto/change-password.dto.ts">
+import { IsString, MinLength, Matches } from 'class-validator';
+
+export class ChangePasswordDto {
+  @IsString()
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase and number',
+  })
+  newPassword: string;
+}
+</file>
+
+<file path="auth/dto/forgot-password.dto.ts">
+import { IsEmail } from 'class-validator';
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+</file>
+
+<file path="auth/dto/login.dto.ts">
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+
+export class LoginDto {
+  @IsEmail({}, { message: 'Invalid email format' })
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password!: string;
+}
+</file>
+
+<file path="auth/dto/register.dto.ts">
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsOptional,
+  Matches,
+} from 'class-validator';
+import { UserRole } from '../../users/user.entity';
+
+export class RegisterDto {
+  @IsEmail({}, { message: 'Invalid email format' })
+  email!: string;
+
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase and number',
+  })
+  password!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
+}
+</file>
+
+<file path="auth/dto/reset-password.dto.ts">
+import { IsString, MinLength, Matches } from 'class-validator';
+
+export class ResetPasswordDto {
+  @IsString()
+  email: string;
+
+  @IsString()
+  token: string;
+
+  @IsString()
+  @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase and number',
+  })
+  newPassword: string;
+}
+</file>
+
+<file path="auth/guards/jwt-auth.guard.ts">
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {}
+</file>
+
+<file path="auth/guards/jwt-refresh.guard.ts">
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+@Injectable()
+export class JwtRefreshGuard extends AuthGuard('jwt-refresh') {}
+</file>
+
+<file path="auth/guards/roles.guard.ts">
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { UserRole } from '../../users/user.entity';
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.get<UserRole[]>(
+      'roles',
+      context.getHandler(),
+    );
+    if (!requiredRoles) return true;
+
+    const { user } = context.switchToHttp().getRequest();
+    if (!requiredRoles.includes(user.role)) {
+      throw new ForbiddenException('Access denied');
+    }
+    return true;
+  }
+}
+</file>
+
+<file path="auth/refresh-token.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../users/user.entity';
+
+@Entity('refresh_tokens')
+export class RefreshToken {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  token: string;
+
+  @Column()
+  userId: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @Column({ nullable: true })
+  deviceInfo: string;
+
+  @Column({ default: false })
+  isRevoked: boolean;
+
+  @Column()
+  expiresAt: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}
+</file>
+
+<file path="auth/strategies/jwt-refresh.strategy.ts">
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../users/user.entity';
+import { Request } from 'express';
+
+@Injectable()
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
+  constructor(
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: Request) => req?.cookies?.refresh_token,
+      ]),
+      secretOrKey: process.env.JWT_REFRESH_SECRET!,
+      passReqToCallback: true,
+      ignoreExpiration: false,
+    });
+  }
+
+  async validate(req: Request, payload: { sub: string }) {
+    const refreshToken = req?.cookies?.refresh_token;
+    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+    if (!user) throw new UnauthorizedException('User not found');
+    (user as any).refreshToken = refreshToken;
+    return user;
+  }
+}
+</file>
+
+<file path="auth/strategies/jwt.strategy.ts">
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../users/user.entity';
+import { Request } from 'express';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  constructor(
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: process.env.JWT_ACCESS_SECRET!,
+      ignoreExpiration: false,
+      passReqToCallback: true,
+    });
+  }
+
+  async validate(
+    req: Request,
+    payload: { sub: string; email: string; role: string },
+  ) {
+    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+    if (!user) throw new UnauthorizedException('User not found');
+    return user;
+  }
+}
+</file>
+
+<file path="common/filters/http-exception.filter.ts">
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import type { Request, Response } from 'express';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const message =
+      exception instanceof HttpException
+        ? exception.getResponse()
+        : 'Internal server error';
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      message:
+        typeof message === 'object' && 'message' in (message as object)
+          ? (message as any).message
+          : message,
+    });
+  }
+}
+</file>
+
+<file path="main.ts">
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Cookie parser
+  app.use(cookieParser());
+
+  // Global prefix
+  app.setGlobalPrefix('api');
+
+  // Validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  const config = new DocumentBuilder()
+    .setTitle('Taskboard API')
+    .setDescription('Task management application API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  // CORS
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  });
+
+  await app.listen(process.env.PORT ?? 3001);
+  console.log(
+    `Application running on: http://localhost:${process.env.PORT ?? 3001}/api`,
+  );
+  console.log(
+    `Swagger docs: http://localhost:${process.env.PORT ?? 3001}/api/docs`,
+  );
+}
+
+bootstrap();
+</file>
+
+<file path="projects/dto/add-member.dto.ts">
+import { IsUUID } from 'class-validator';
+
+export class AddMemberDto {
+  @IsUUID()
+  userId: string;
+}
+</file>
+
+<file path="projects/dto/create-project.dto.ts">
+import { IsString, IsOptional } from 'class-validator';
+
+export class CreateProjectDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+}
+</file>
+
+<file path="projects/dto/update-project.dto.ts">
+import { IsString, IsOptional } from 'class-validator';
+
+export class UpdateProjectDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+}
+</file>
+
+<file path="projects/project.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../users/user.entity';
+
+@Entity('projects')
+export class Project {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  name: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @ManyToMany(() => User)
+  @JoinTable({
+    name: 'project_members',
+    joinColumn: { name: 'project_id' },
+    inverseJoinColumn: { name: 'user_id' },
+  })
+  members: User[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+</file>
+
+<file path="projects/projects.controller.ts">
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ProjectsService } from './projects.service';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { AddMemberDto } from './dto/add-member.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/user.entity';
+
+@UseGuards(JwtAuthGuard)
+@Controller('projects')
+export class ProjectsController {
+  constructor(private projectsService: ProjectsService) {}
+
+  @Post()
+  create(@Body() dto: CreateProjectDto, @CurrentUser() user: User) {
+    return this.projectsService.create(dto, user);
+  }
+
+  @Get()
+  findAll(@CurrentUser() user: User) {
+    return this.projectsService.findAll(user);
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.projectsService.findOne(id, user);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProjectDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectsService.update(id, dto, user);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: User) {
+    return this.projectsService.remove(id, user);
+  }
+
+  @Post(':id/members')
+  addMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddMemberDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectsService.addMember(id, dto, user);
+  }
+
+  @Delete(':id/members/:userId')
+  removeMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.projectsService.removeMember(id, userId, user);
+  }
+}
+</file>
+
+<file path="projects/projects.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProjectsService } from './projects.service';
+import { ProjectsController } from './projects.controller';
+import { Project } from './project.entity';
+import { User } from '../users/user.entity';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Project, User])],
+  providers: [ProjectsService],
+  controllers: [ProjectsController],
+  exports: [ProjectsService],
+})
+export class ProjectsModule {}
+</file>
+
+<file path="projects/projects.service.ts">
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Project } from './project.entity';
+import { User } from '../users/user.entity';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { AddMemberDto } from './dto/add-member.dto';
+
+@Injectable()
+export class ProjectsService {
+  constructor(
+    @InjectRepository(Project)
+    private projectRepo: Repository<Project>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+  ) {}
+
+  // ==================== CREATE ====================
+  async create(dto: CreateProjectDto, currentUser: User): Promise<Project> {
+    const project = this.projectRepo.create({
+      name: dto.name,
+      description: dto.description,
+      createdBy: currentUser,
+      members: [currentUser],
+    });
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== FIND ALL (mine only) ====================
+  async findAll(currentUser: User): Promise<Project[]> {
+    return this.projectRepo
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.createdBy', 'creator')
+      .leftJoinAndSelect('project.members', 'members')
+      .where('members.id = :userId', { userId: currentUser.id })
+      .orderBy('project.createdAt', 'DESC')
+      .getMany();
+  }
+
+  // ==================== FIND ONE ====================
+  async findOne(id: string, currentUser: User): Promise<Project> {
+    const project = await this.projectRepo
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.createdBy', 'creator')
+      .leftJoinAndSelect('project.members', 'members')
+      .where('project.id = :id', { id })
+      .getOne();
+
+    if (!project) throw new NotFoundException('Project not found');
+    this.checkMembership(project, currentUser);
+    return project;
+  }
+
+  // ==================== UPDATE ====================
+  async update(
+    id: string,
+    dto: UpdateProjectDto,
+    currentUser: User,
+  ): Promise<Project> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+
+    Object.assign(project, dto);
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== DELETE ====================
+  async remove(id: string, currentUser: User): Promise<void> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+    await this.projectRepo.remove(project);
+  }
+
+  // ==================== ADD MEMBER ====================
+  async addMember(
+    id: string,
+    dto: AddMemberDto,
+    currentUser: User,
+  ): Promise<Project> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+
+    const userToAdd = await this.userRepo.findOne({
+      where: { id: dto.userId },
+    });
+    if (!userToAdd) throw new NotFoundException('User not found');
+
+    const alreadyMember = project.members.some((m) => m.id === dto.userId);
+    if (alreadyMember) throw new ConflictException('User is already a member');
+
+    project.members.push(userToAdd);
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== REMOVE MEMBER ====================
+  async removeMember(
+    id: string,
+    userId: string,
+    currentUser: User,
+  ): Promise<Project> {
+    const project = await this.findOne(id, currentUser);
+    this.checkAdmin(project, currentUser);
+
+    if (userId === project.createdBy.id) {
+      throw new ForbiddenException('Cannot remove the project creator');
+    }
+
+    project.members = project.members.filter((m) => m.id !== userId);
+    return this.projectRepo.save(project);
+  }
+
+  // ==================== HELPERS ====================
+  private checkMembership(project: Project, user: User): void {
+    const isMember = project.members.some((m) => m.id === user.id);
+    if (!isMember)
+      throw new ForbiddenException('You are not a member of this project');
+  }
+
+  isAdmin(project: Project, user: User): boolean {
+    return project.createdBy.id === user.id;
+  }
+
+  private checkAdmin(project: Project, user: User): void {
+    if (!this.isAdmin(project, user)) {
+      throw new ForbiddenException(
+        'Only the project admin can perform this action',
+      );
+    }
+  }
+}
+</file>
+
+<file path="tasks/dto/create-task.dto.ts">
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsDateString,
+} from 'class-validator';
+import { TaskStatus, TaskPriority } from '../task.entity';
+
+export class CreateTaskDto {
+  @IsString()
+  title: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsDateString()
+  @IsOptional()
+  dueDate?: Date;
+
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string;
+}
+</file>
+
+<file path="tasks/dto/filter-task.dto.ts">
+import { IsOptional, IsEnum, IsUUID } from 'class-validator';
+import { TaskStatus, TaskPriority } from '../task.entity';
+
+export class FilterTaskDto {
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string;
+}
+</file>
+
+<file path="tasks/dto/update-task.dto.ts">
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsDateString,
+} from 'class-validator';
+import { TaskStatus, TaskPriority } from '../task.entity';
+
+export class UpdateTaskDto {
+  @IsString()
+  @IsOptional()
+  title?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsEnum(TaskStatus)
+  @IsOptional()
+  status?: TaskStatus;
+
+  @IsEnum(TaskPriority)
+  @IsOptional()
+  priority?: TaskPriority;
+
+  @IsDateString()
+  @IsOptional()
+  dueDate?: Date;
+
+  @IsUUID()
+  @IsOptional()
+  assigneeId?: string;
+}
+</file>
+
+<file path="tasks/task.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in_progress',
+  DONE = 'done',
+}
+
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+}
+
+@Entity('tasks')
+export class Task {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  title: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ type: 'enum', enum: TaskStatus, default: TaskStatus.TODO })
+  status: TaskStatus;
+
+  @Column({ type: 'enum', enum: TaskPriority, default: TaskPriority.MEDIUM })
+  priority: TaskPriority;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  dueDate: Date;
+
+  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'project_id' })
+  project: Project;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'creator_id' })
+  creator: User;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'assignee_id' })
+  assignee: User | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+</file>
+
+<file path="tasks/tasks.controller.ts">
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { TasksService } from './tasks.service';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { FilterTaskDto } from './dto/filter-task.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/user.entity';
+
+@UseGuards(JwtAuthGuard)
+@Controller('projects/:projectId/tasks')
+export class TasksController {
+  constructor(private tasksService: TasksService) {}
+
+  @Post()
+  create(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() dto: CreateTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.create(projectId, dto, user);
+  }
+
+  @Get()
+  findAll(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Query() filters: FilterTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.findAll(projectId, filters, user);
+  }
+
+  @Get(':taskId')
+  findOne(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.findOne(projectId, taskId, user);
+  }
+
+  @Patch(':taskId')
+  update(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Body() dto: UpdateTaskDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.update(projectId, taskId, dto, user);
+  }
+
+  @Delete(':taskId')
+  remove(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.tasksService.remove(projectId, taskId, user);
+  }
+}
+</file>
+
+<file path="tasks/tasks.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TasksService } from './tasks.service';
+import { TasksController } from './tasks.controller';
+import { Task } from './task.entity';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+import { ProjectsModule } from '../projects/projects.module';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Task, User, Project]), ProjectsModule],
+  providers: [TasksService],
+  controllers: [TasksController],
+})
+export class TasksModule {}
+</file>
+
+<file path="tasks/tasks.service.ts">
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Task } from './task.entity';
+import { User } from '../users/user.entity';
+import { Project } from '../projects/project.entity';
+import { ProjectsService } from '../projects/projects.service';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { FilterTaskDto } from './dto/filter-task.dto';
+
+@Injectable()
+export class TasksService {
+  constructor(
+    @InjectRepository(Task)
+    private taskRepo: Repository<Task>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    @InjectRepository(Project)
+    private projectRepo: Repository<Project>,
+    private projectsService: ProjectsService,
+  ) {}
+
+  // ==================== CREATE ====================
+  async create(
+    projectId: string,
+    dto: CreateTaskDto,
+    currentUser: User,
+  ): Promise<Task> {
+    const project = await this.projectsService.findOne(projectId, currentUser);
+
+    let assignee: User | undefined = undefined;
+    if (dto.assigneeId) {
+      const isMember = project.members.some((m) => m.id === dto.assigneeId);
+      if (!isMember)
+        throw new ForbiddenException(
+          'Assignee must be a member of the project',
+        );
+      assignee =
+        (await this.userRepo.findOne({ where: { id: dto.assigneeId } })) ??
+        undefined;
+    }
+
+    const task = this.taskRepo.create({
+      title: dto.title,
+      description: dto.description,
+      status: dto.status,
+      priority: dto.priority,
+      dueDate: dto.dueDate,
+      project,
+      creator: currentUser,
+      assignee: assignee,
+    });
+
+    return this.taskRepo.save(task);
+  }
+
+  // ==================== FIND ALL (with filters) ====================
+  async findAll(
+    projectId: string,
+    filters: FilterTaskDto,
+    currentUser: User,
+  ): Promise<Task[]> {
+    await this.projectsService.findOne(projectId, currentUser);
+
+    const query = this.taskRepo
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.creator', 'creator')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .where('task.project_id = :projectId', { projectId });
+
+    if (filters.status) {
+      query.andWhere('task.status = :status', { status: filters.status });
+    }
+    if (filters.priority) {
+      query.andWhere('task.priority = :priority', {
+        priority: filters.priority,
+      });
+    }
+    if (filters.assigneeId) {
+      query.andWhere('assignee.id = :assigneeId', {
+        assigneeId: filters.assigneeId,
+      });
+    }
+
+    return query.orderBy('task.createdAt', 'DESC').getMany();
+  }
+
+  // ==================== FIND ONE ====================
+  async findOne(
+    projectId: string,
+    taskId: string,
+    currentUser: User,
+  ): Promise<Task> {
+    await this.projectsService.findOne(projectId, currentUser);
+
+    const task = await this.taskRepo.findOne({
+      where: { id: taskId, project: { id: projectId } },
+      relations: {
+        creator: true,
+        assignee: true,
+        project: true,
+      },
+    });
+
+    if (!task) throw new NotFoundException('Task not found');
+    return task;
+  }
+
+  // ==================== UPDATE ====================
+  async update(
+    projectId: string,
+    taskId: string,
+    dto: UpdateTaskDto,
+    currentUser: User,
+  ): Promise<Task> {
+    const project = await this.projectsService.findOne(projectId, currentUser);
+    const task = await this.findOne(projectId, taskId, currentUser);
+
+    const isAdmin = this.projectsService.isAdmin(project, currentUser);
+    const isCreator = task.creator.id === currentUser.id;
+    const isAssignee = task.assignee?.id === currentUser.id;
+
+    if (!isAdmin && !isCreator && !isAssignee) {
+      throw new ForbiddenException('You cannot modify this task');
+    }
+
+    if (dto.assigneeId !== undefined) {
+      const isMember = project.members.some((m) => m.id === dto.assigneeId);
+      if (!isMember)
+        throw new ForbiddenException(
+          'Assignee must be a member of the project',
+        );
+      task.assignee = await this.userRepo.findOne({
+        where: { id: dto.assigneeId },
+      });
+    }
+
+    Object.assign(task, {
+      title: dto.title ?? task.title,
+      description: dto.description ?? task.description,
+      status: dto.status ?? task.status,
+      priority: dto.priority ?? task.priority,
+      dueDate: dto.dueDate ?? task.dueDate,
+    });
+
+    return this.taskRepo.save(task);
+  }
+
+  // ==================== DELETE ====================
+  async remove(
+    projectId: string,
+    taskId: string,
+    currentUser: User,
+  ): Promise<void> {
+    const project = await this.projectsService.findOne(projectId, currentUser);
+    const task = await this.findOne(projectId, taskId, currentUser);
+
+    const isAdmin = this.projectsService.isAdmin(project, currentUser);
+    const isCreator = task.creator.id === currentUser.id;
+
+    if (!isAdmin && !isCreator) {
+      throw new ForbiddenException('You cannot delete this task');
+    }
+
+    await this.taskRepo.remove(task);
+  }
+}
+</file>
+
+<file path="users/user.entity.ts">
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+
+export enum UserRole {
+  ADMIN = 'admin',
+  MEMBER = 'member',
+}
+
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  name: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  password: string;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.MEMBER })
+  role: UserRole;
+
+  @Column({ default: 0 })
+  loginAttempts: number;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  lockedUntil: Date | null;
+
+  @Column({ nullable: true })
+  resetPasswordToken: string | null;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  resetPasswordExpiry: Date | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+</file>
+
+</files>
