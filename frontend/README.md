@@ -1,139 +1,81 @@
-# Task Management - Taskboard Frontend
+# Task Management Frontend
 
-A React + Vite frontend for the Taskboard API — a lightweight team task board where authenticated users can create projects, manage tasks, assign them to teammates, and track status changes on a Kanban board.
+This is the frontend application for the Task Management platform. It provides a sleek, responsive, and premium UI built on a modern Black & Emerald design system.
 
-Built against the [Taskboard NestJS backend](../backend).
+## Project Overview
 
----
-
-## Tech Stack
-
-- **React 18** + **Vite** — fast dev server and build
-- **React Router v6** — client-side routing and protected routes
-- **Axios** — HTTP client with silent access-token refresh on 401
-- **Plain CSS design system** (no UI framework) — see `src/index.css`
-
----
+The application is built using **React** and **Vite**. It interacts securely with the backend API, offering real-time user validation, protected routing, dynamic search and filtering, and comprehensive state management without relying on heavy external state libraries. 
 
 ## Features
 
-- **Auth**
-  - Login and registration screens with client-side validation
-  - Silent session restore on page load (via the refresh-token cookie)
-  - Automatic access-token refresh on 401 responses
-  - Logout
-- **Projects**
-  - List, create, edit, and delete projects (admin/creator only)
-  - Member management modal (add/remove project members)
-- **Tasks**
-  - Kanban board (**To Do** / **In Progress** / **Done**) with drag-and-drop status changes
-  - Create, edit, and delete tasks
-  - Filtering by status, priority, and assignee
-- **UX**
-  - Loading, empty, and error states on every data view
-  - Toast notifications for background actions (create/update/delete)
-  - Responsive layout — sidebar collapses to a top bar and the board stacks into a single column on mobile
+- **Premium Design:** Clean, modern interface emphasizing a Black & Emerald palette.
+- **Authentication:** Full login, registration, and password recovery flows with live client-side validation and password strength checklists.
+- **Silent Token Refresh:** Built-in Axios interceptors seamlessly rotate JWTs in the background.
+- **Project Dashboard:** Create, manage, and view assigned projects.
+- **Kanban Task Board:** Visualize, filter, and organize tasks efficiently.
+- **Dynamic Search & Filtering:** Debounced searching and sorting by status/priority.
+- **Responsive:** Fully optimized for both desktop and mobile devices.
 
----
+## Tech Stack
+
+- **Framework:** React 18
+- **Build Tool:** Vite
+- **Routing:** React Router (v6)
+- **HTTP Client:** Axios
+- **Styling:** Vanilla CSS (Custom Design System)
 
 ## Project Structure
 
 ```
-src/
-├── api/
-│   ├── client.js          # Axios instance, interceptors, token refresh
-│   ├── auth.js             # Auth endpoints
-│   ├── projects.js         # Project endpoints
-│   └── tasks.js             # Task endpoints
-├── components/
-│   ├── Layout.jsx           # App shell (sidebar/top bar)
-│   ├── ProtectedRoute.jsx   # Route guard for authenticated pages
-│   ├── ProjectModal.jsx     # Create/edit project form
-│   ├── MemberModal.jsx      # Add/remove project members
-│   ├── TaskCard.jsx         # Kanban card
-│   ├── TaskModal.jsx        # Create/edit task form
-│   ├── ConfirmDialog.jsx    # Delete confirmation
-│   └── Toast.jsx            # Toast notifications
-├── context/
-│   └── AuthContext.jsx      # Auth state, current user, session restore
-├── pages/
-│   ├── Login.jsx
-│   ├── Register.jsx
-│   ├── Dashboard.jsx        # Project list
-│   └── ProjectBoard.jsx     # Kanban board + filters
-├── utils.js
-├── index.css                # Design tokens + global styles
-├── App.jsx                  # Routes
-└── main.jsx                 # Entry point
+frontend/
+├── src/
+│   ├── api/          # Axios instance and API interceptors
+│   ├── components/   # Reusable UI components (Modals, Layout, ProtectedRoute)
+│   ├── context/      # Global state providers (AuthContext)
+│   ├── pages/        # Main application views (Dashboard, Login, Register)
+│   ├── index.css     # Global design system variables and tokens
+│   └── main.jsx      # Application entry point
+├── index.html        # HTML template
+├── vite.config.js    # Vite configuration
+└── Dockerfile        # Production NGINX configuration
 ```
 
----
+## Environment Variables
 
-## Prerequisites
+Create a `.env` file in the `frontend` directory:
 
-- Node.js >= 18
-- The Taskboard backend running (see backend README) — default `http://localhost:3001/api`
+```env
+# The URL to the Backend API
+VITE_API_URL=http://localhost:3001/api
+```
 
----
-
-## Setup
-
-### 1. Install dependencies
+## Installation
 
 ```bash
 npm install
 ```
 
-### 2. Configure environment variables
+## Running Locally
+
+To start the Vite development server:
 
 ```bash
-cp .env.example .env
-```
-
-| Variable       | Description                 | Example                     |
-| -------------- | --------------------------- | --------------------------- |
-| `VITE_API_URL` | Base URL of the backend API | `http://localhost:3001/api` |
-
-### 3. Run the app
-
-```bash
-# Development
 npm run dev
-
-# Production build
-npm run build
-npm run preview
 ```
+The application will be available at `http://localhost:3000`.
 
-The app runs at `http://localhost:3000` by default.
+## Build Instructions
 
-> **Note:** make sure the backend's `FRONTEND_URL` environment variable is set to `http://localhost:3000` so CORS and the refresh-token cookie work correctly, and that the backend is reachable at the URL configured in `VITE_API_URL`.
+To bundle the application for production:
 
----
+```bash
+npm run build
+```
+This will compile and minify the assets into the `dist/` folder. You can preview the production build locally using `npm run preview`.
 
-## Test Credentials
+## Deployment
 
-Use the same accounts you registered/seeded on the backend, e.g.:
+The frontend is deployed as a static Single Page Application (SPA).
 
-- **Admin:** `admin@test.com` / `Admin1234`
-- **Member:** `member@test.com` / `Member1234`
-
-(See the backend README for registration/seed instructions.)
-
----
-
-## Available Scripts
-
-| Script            | Description                          |
-| ----------------- | ------------------------------------ |
-| `npm run dev`     | Start the Vite dev server            |
-| `npm run build`   | Build for production into `dist/`    |
-| `npm run preview` | Preview the production build locally |
-
----
-
-## Notes
-
-- Protected routes redirect to `/login` if there is no valid session.
-- All API calls automatically attach the access token and retry once with a refreshed token on a 401.
-- Only the project admin/creator can edit or delete a project or remove members; task editing is available to admins, the task creator, and the assigned user.
+- **Live URL:** **[https://taskboard-one-theta.vercel.app](https://taskboard-one-theta.vercel.app)**
+- **Backend Target:** It points to the live backend API at `https://farm-build-your-portfolio-project-2.onrender.com/api`

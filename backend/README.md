@@ -1,238 +1,125 @@
 # Task Management API
 
-A production-ready task management backend built with NestJS, PostgreSQL, and TypeORM. Supports project-based task tracking with role-based access control, JWT authentication, and refresh token rotation.
+This is the backend for the Task Management application, providing a secure, scalable RESTful API to handle users, projects, tasks, and role-based access control.
 
----
+## Project Overview
 
-## Tech Stack
-
-- **Backend:** NestJS + TypeScript
-- **Database:** PostgreSQL + TypeORM
-- **Auth:** JWT (Access + Refresh tokens with rotation)
-- **Validation:** class-validator + class-transformer
-- **Docs:** Swagger / OpenAPI
-- **Testing:** Jest
-
----
+The backend is built using **NestJS** and **PostgreSQL**. It enforces robust business logic including strict role-based data boundaries (users can only access projects they belong to), secure password hashing, and stateless JWT authentication with short-lived access tokens and httpOnly refresh cookies. 
 
 ## Features
 
-- JWT authentication with refresh token rotation & device tracking
-- Account lockout after 5 failed login attempts
-- Role-based access control (Admin / Member)
-- Project management with member access control
-- Task management with filtering by status, priority, and assignee
-- Centralized error handling
-- Swagger documentation at `/api/docs`
+- **Authentication:** Registration, Login, Logout (single & all devices), Password Change, and Password Recovery.
+- **JWT Flow:** Secure HTTP-only refresh tokens and short-lived access tokens.
+- **Role-Based Access Control:** Differentiates between Project Admins (creators) and Members.
+- **Projects & Tasks:** Full CRUD operations for projects and tasks with relational integrity.
+- **Filtering & Search:** Built-in endpoints for querying tasks by status, priority, assignee, and search terms.
+- **Validation:** Strict incoming request validation and sanitization using `class-validator`.
+- **API Documentation:** Auto-generated Swagger documentation.
 
----
+## Tech Stack
+
+- **Framework:** NestJS (Node.js)
+- **Database:** PostgreSQL
+- **ORM:** TypeORM
+- **Authentication:** Passport, JWT, bcryptjs
+- **Testing:** Jest, Supertest
+- **Containerization:** Docker
 
 ## Project Structure
 
 ```
-src/
-├── auth/
-│   ├── decorators/         # CurrentUser, Roles decorators
-│   ├── dto/                # Login, Register, ChangePassword, ForgotPassword, ResetPassword
-│   ├── guards/             # JwtAuthGuard, JwtRefreshGuard, RolesGuard
-│   ├── strategies/         # JWT and JWT Refresh Passport strategies
-│   ├── auth.controller.ts
-│   ├── auth.service.ts
-│   ├── auth.module.ts
-│   └── refresh-token.entity.ts
-├── projects/
-│   ├── dto/                # CreateProject, UpdateProject, AddMember
-│   ├── project.entity.ts
-│   ├── projects.controller.ts
-│   ├── projects.service.ts
-│   └── projects.module.ts
-├── tasks/
-│   ├── dto/                # CreateTask, UpdateTask, FilterTask
-│   ├── task.entity.ts
-│   ├── tasks.controller.ts
-│   ├── tasks.service.ts
-│   └── tasks.module.ts
-├── users/
-│   └── user.entity.ts
-├── common/
-│   └── filters/
-│       └── http-exception.filter.ts
-├── app.module.ts
-└── main.ts
+backend/
+├── src/
+│   ├── auth/         # Authentication and session management
+│   ├── database/     # TypeORM configurations and migrations
+│   ├── projects/     # Project and member management modules
+│   ├── tasks/        # Task creation, assignment, and filtering
+│   ├── users/        # User entity and core profile logic
+│   ├── app.module.ts # Main application module
+│   └── main.ts       # Application bootstrap
+├── test/             # End-to-end (e2e) tests
+├── Dockerfile        # Production Docker configuration
+└── package.json      # Dependencies and scripts
 ```
 
----
+## Environment Variables
 
-## Prerequisites
+Create a `.env` file in the `backend` directory with the following variables:
 
-- Node.js >= 18
-- PostgreSQL >= 14
-- npm
+```env
+# Server
+NODE_ENV=development
+PORT=3001
+FRONTEND_URL=http://localhost:3000
 
----
+# Database
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_NAME=taskboard
+DATABASE_SSL=false
 
-## Setup
-
-### 1. Clone the repository
-
-```bash
-git clone <your-repo-url>
-cd task-management
+# Authentication
+JWT_SECRET=your_super_secret_key
+JWT_EXPIRES_IN=7d
+JWT_ACCESS_SECRET=your_access_secret
+JWT_REFRESH_SECRET=your_refresh_secret
 ```
 
-### 2. Install dependencies
+## Installation
 
 ```bash
 npm install
 ```
 
-### 3. Configure environment variables
+## Running Locally
+
+To run the server in development mode:
 
 ```bash
-cp .env.example .env
-```
-
-Fill in the values in `.env` (see [Environment Variables](#environment-variables) below).
-
-### 4. Create the database
-
-```bash
-psql -U postgres -c "CREATE DATABASE taskboard;"
-```
-
-### 5. Run the application
-
-```bash
-# Development
 npm run start:dev
-
-# Production
-npm run build
-npm run start:prod
 ```
+The server will start at `http://localhost:3001`.
 
-The API will be available at: `http://localhost:3001/api`  
-Swagger docs at: `http://localhost:3001/api/docs`
+## Running with Docker
 
----
-
-## Environment Variables
-
-| Variable             | Description               | Example                 |
-| -------------------- | ------------------------- | ----------------------- |
-| `PORT`               | Port the server runs on   | `3001`                  |
-| `NODE_ENV`           | Environment               | `development`           |
-| `DATABASE_HOST`      | PostgreSQL host           | `localhost`             |
-| `DATABASE_PORT`      | PostgreSQL port           | `5432`                  |
-| `DATABASE_USER`      | PostgreSQL username       | `postgres`              |
-| `DATABASE_PASSWORD`  | PostgreSQL password       | `yourpassword`          |
-| `DATABASE_NAME`      | PostgreSQL database name  | `taskboard`             |
-| `JWT_ACCESS_SECRET`  | Secret for access tokens  | `your_access_secret`    |
-| `JWT_REFRESH_SECRET` | Secret for refresh tokens | `your_refresh_secret`   |
-| `FRONTEND_URL`       | Allowed CORS origin       | `http://localhost:3000` |
-
----
-
-## API Overview
-
-### Auth — `/api/auth`
-
-| Method | Endpoint           | Auth   | Description                 |
-| ------ | ------------------ | ------ | --------------------------- |
-| POST   | `/register`        | Public | Register a new user         |
-| POST   | `/login`           | Public | Login and receive tokens    |
-| POST   | `/refresh`         | Cookie | Refresh access token        |
-| POST   | `/logout`          | Bearer | Logout current device       |
-| POST   | `/logout-all`      | Bearer | Logout all devices          |
-| GET    | `/me`              | Bearer | Get current user profile    |
-| POST   | `/change-password` | Bearer | Change password             |
-| POST   | `/forgot-password` | Public | Request password reset code |
-| POST   | `/reset-password`  | Public | Reset password with code    |
-
-### Projects — `/api/projects`
-
-| Method | Endpoint               | Auth   | Description                       |
-| ------ | ---------------------- | ------ | --------------------------------- |
-| POST   | `/`                    | Bearer | Create a project                  |
-| GET    | `/`                    | Bearer | List projects you are a member of |
-| GET    | `/:id`                 | Bearer | Get a single project              |
-| PATCH  | `/:id`                 | Bearer | Update project (Admin only)       |
-| DELETE | `/:id`                 | Bearer | Delete project (Admin only)       |
-| POST   | `/:id/members`         | Bearer | Add a member (Admin only)         |
-| DELETE | `/:id/members/:userId` | Bearer | Remove a member (Admin only)      |
-
-### Tasks — `/api/projects/:projectId/tasks`
-
-| Method | Endpoint   | Auth   | Description                                     |
-| ------ | ---------- | ------ | ----------------------------------------------- |
-| POST   | `/`        | Bearer | Create a task                                   |
-| GET    | `/`        | Bearer | List tasks (filter by status/priority/assignee) |
-| GET    | `/:taskId` | Bearer | Get a single task                               |
-| PATCH  | `/:taskId` | Bearer | Update task (Admin / creator / assignee)        |
-| DELETE | `/:taskId` | Bearer | Delete task (Admin / creator only)              |
-
-Full interactive documentation is available at `/api/docs`.
-
----
-
-## Roles
-
-| Role     | Capabilities                                                               |
-| -------- | -------------------------------------------------------------------------- |
-| `admin`  | Full access: manage projects, members, and all tasks within their projects |
-| `member` | Can create tasks, edit tasks they created or are assigned to               |
-
-> **Note:** The `admin` role is a platform-level role set at registration. Project-level admin is determined by who created the project.
-
----
-
-## Running Tests
+You can containerize the backend or run it alongside the database via Docker Compose from the root directory.
+To build and run just the backend image:
 
 ```bash
-# Run all tests
-npm test
+docker build -t taskboard-backend .
+docker run -p 3001:3001 --env-file .env taskboard-backend
+```
 
-# With coverage
+## API Documentation (Swagger)
+
+When the server is running, the interactive Swagger API documentation is automatically generated and accessible at:
+- **Local:** `http://localhost:3001/api/docs`
+- **Production:** `https://farm-build-your-portfolio-project-2.onrender.com/api/docs`
+
+## Authentication Overview
+
+The API implements a dual-token JWT architecture:
+1. **Access Token:** Returned in the JSON body upon login. Sent by the client in the `Authorization: Bearer <token>` header.
+2. **Refresh Token:** Sent automatically to the client as an `httpOnly` secure cookie. Used to seamlessly fetch new access tokens without exposing the refresh mechanism to JavaScript.
+
+## Testing
+
+The backend includes a comprehensive suite of automated tests verifying core logic and security boundaries.
+
+```bash
+# Run unit tests
+npm run test
+
+# Run tests with watch mode
+npm run test:watch
+
+# Run test coverage report
 npm run test:cov
 ```
 
-Tests cover:
+## Deployment
 
-- Registration conflict on duplicate email
-- Successful registration
-- Login failure on wrong password
-- Login failure on locked account
-- Project update forbidden for non-admin
-- Removing project creator from members is forbidden
-- Non-member cannot access a project
-
----
-
-## Seed / Test Credentials
-
-Since the app uses `synchronize: true` in development, tables are created automatically on first run.
-
-Register an Admin account:
-
-```bash
-curl -X POST http://localhost:3001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Admin User", "email": "admin@test.com", "password": "Admin1234", "role": "admin"}'
-```
-
-Register a Member account:
-
-```bash
-curl -X POST http://localhost:3001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Member User", "email": "member@test.com", "password": "Member1234"}'
-```
-
----
-
-## Notes
-
-- Refresh tokens are stored hashed in the database and rotated on every use.
-- Account lockout triggers after 5 consecutive failed login attempts (30-minute lock).
-- All routes under `/api/projects` and `/api/projects/:id/tasks` require a valid Bearer token.
-- Tasks can only be assigned to users who are members of the project.
+The production API is currently deployed and hosted at:
+**[https://farm-build-your-portfolio-project-2.onrender.com](https://farm-build-your-portfolio-project-2.onrender.com)**

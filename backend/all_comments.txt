@@ -1,0 +1,52 @@
+src\app.module.ts: // SSL is required for hosted Postgres (e.g. Neon) but must be OFF
+src\app.module.ts: // for local/Docker Postgres. Controlled via DATABASE_SSL env var.
+src\auth\auth.service.spec.ts: // TEST 1 — Register: conflict on duplicate email
+src\auth\auth.service.spec.ts: // TEST 2 — Login: invalid credentials
+src\auth\auth.service.spec.ts: lockedUntil: new Date(Date.now() + 60000), // locked for 1 more minute
+src\auth\auth.service.ts: // ==================== TOKENS ====================
+src\auth\auth.service.ts: // ==================== REGISTER ====================
+src\auth\auth.service.ts: // ==================== LOGIN ====================
+src\auth\auth.service.ts: // ==================== REFRESH ====================
+src\auth\auth.service.ts: // ==================== LOGOUT ====================
+src\auth\auth.service.ts: // ==================== LOGOUT ALL ====================
+src\auth\auth.service.ts: // ==================== ME ====================
+src\auth\auth.service.ts: // ==================== CHANGE PASSWORD ====================
+src\auth\auth.service.ts: // ==================== FORGOT PASSWORD ====================
+src\auth\auth.service.ts: // TODO: send email
+src\auth\auth.service.ts: // ==================== RESET PASSWORD ====================
+src\database\data-source.ts: // Used ONLY by the TypeORM CLI (migration:generate / migration:run / migration:revert).
+src\database\data-source.ts: // The running app still uses the async config in app.module.ts.
+src\database\seed.ts: // ---- Users ----
+src\database\seed.ts: // ---- Project ----
+src\database\seed.ts: // ---- Tasks ----
+src\main.ts: // Cookie parser
+src\main.ts: // Global prefix
+src\main.ts: // Validation pipe
+src\main.ts: // CORS
+src\main.ts: origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+src\main.ts: `Application running on: http://localhost:${process.env.PORT ?? 3001}/api`,
+src\main.ts: `Swagger docs: http://localhost:${process.env.PORT ?? 3001}/api/docs`,
+src\projects\projects.service.spec.ts: // TEST 3 — Only project admin can update
+src\projects\projects.service.spec.ts: // Mock findOne via queryBuilder
+src\projects\projects.service.spec.ts: // TEST 4 — Cannot remove project creator from members
+src\projects\projects.service.spec.ts: // TEST 5 — Non-member cannot access project
+src\projects\projects.service.ts: // ==================== CREATE ====================
+src\projects\projects.service.ts: // ==================== FIND ALL (mine only) ====================
+src\projects\projects.service.ts: // ==================== FIND ONE ====================
+src\projects\projects.service.ts: // ==================== UPDATE ====================
+src\projects\projects.service.ts: // ==================== DELETE ====================
+src\projects\projects.service.ts: // ==================== ADD MEMBER ====================
+src\projects\projects.service.ts: // ==================== REMOVE MEMBER ====================
+src\projects\projects.service.ts: // ==================== HELPERS ====================
+src\tasks\dto\filter-task.dto.ts: // Searches title + description (case-insensitive, partial match)
+src\tasks\tasks.service.spec.ts: // TEST 1 — Cannot assign a task to a non-member
+src\tasks\tasks.service.spec.ts: // TEST 2 — Only admin/creator/assignee can update
+src\tasks\tasks.service.spec.ts: // TEST 3 — assigneeId: null clears the assignee
+src\tasks\tasks.service.spec.ts: // TEST 4 — Only admin/creator can delete
+src\tasks\tasks.service.spec.ts: // TEST 5 — Filtering by status
+src\tasks\tasks.service.ts: // ==================== CREATE ====================
+src\tasks\tasks.service.ts: // ==================== FIND ALL (with filters) ====================
+src\tasks\tasks.service.ts: // ==================== FIND ALL (with filters, search, sort, pagination) ====================
+src\tasks\tasks.service.ts: // ==================== FIND ONE ====================
+src\tasks\tasks.service.ts: // ==================== UPDATE ====================
+src\tasks\tasks.service.ts: // ==================== DELETE ====================
