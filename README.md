@@ -137,19 +137,4 @@ This implementation satisfies all requirements specified in the original technic
   - Swagger/OpenAPI documentation.
   - Pagination, Search, and Sorting on Task lists.
 
-# Screenshots
 
-![Dashboard View](#) *(Placeholder for dashboard screenshot)*
-![Task Board](#) *(Placeholder for kanban board screenshot)*
-![Authentication](#) *(Placeholder for login/register screenshot)*
-
-# Future Improvements
-
-*The following features fall outside the scope of the original requirements but represent logical next steps for the platform:*
-- Real-time updates via WebSockets or Server-Sent Events (SSE).
-- Robust audit logs for tracking granular changes across tasks.
-- Advanced CI/CD pipelines configured via GitHub Actions.
-
-# License
-
-This project is open-source and available under the [MIT License](LICENSE).
