@@ -1,140 +1,123 @@
-# Project Overview
+# Task Management Application
 
-Task Management is a production-minded Full Stack Application designed to help teams efficiently organize, track, and collaborate on projects and tasks. It provides a secure environment where project administrators can manage team membership and delegate work while ensuring that all users only see the data they are authorized to access. 
+A full-stack task management system with role-based access control, project organization, task tracking, and JWT authentication.
 
-# About This Project
+## Project Overview
 
-This project was built as a robust, scalable Task Management Application based on a rigorous technical assignment. It focuses heavily on security, clean architecture, and modern UX design, fulfilling all core requirements while incorporating professional engineering practices like stateless JWT architecture, containerization, and automated testing.
+This project is a multi-tenant task management application consisting of a NestJS RESTful backend, a React/Vite frontend, and a PostgreSQL database. It is designed around clear data isolation bounds (users only access projects they own or belong to) and a dual-token authentication flow.
 
-# Features
+## Technology Stack
 
-- **Authentication:** Secure registration, login, and password management flows.
-- **Authorization:** Granular role-based access control protecting resources at the database query level.
-- **Project Management:** Create, update, and manage workspaces efficiently.
-- **Task Management:** Full task lifecycle control with assignments, statuses, priorities, and deadlines.
-- **Member Management:** Project admins can seamlessly invite and remove team members.
-- **Dashboard:** A central view for quickly parsing workload and project health.
-- **Search:** Real-time debounced search to quickly locate specific tasks.
-- **Filtering & Sorting:** Filter tasks by status and priority; sort them by various parameters.
-- **Pagination:** Backend-driven pagination for handling large volumes of tasks efficiently.
-- **Responsive UI:** A premium "Black & Emerald" interface built to work flawlessly on both desktop and mobile.
-- **JWT Authentication:** Implements a dual-token system (short-lived Access Tokens and `httpOnly` Refresh Tokens).
-- **Refresh Token Flow:** Axios interceptors on the frontend automatically rotate sessions seamlessly.
-- **Validation:** Both frontend live validation and strict backend DTO sanitization via `class-validator`.
-- **Error Handling:** Centralized exception filters to catch and translate errors into user-friendly responses.
-- **Docker:** Fully containerized setup for easy deployments and identical local development environments.
-- **Swagger:** Auto-generated API documentation accessible in-browser.
-- **Automated Tests:** Comprehensive unit and integration test coverage across core backend services.
+### Backend
+- NestJS, TypeScript
+- TypeORM, PostgreSQL
+- Passport-JWT, bcryptjs
+- `@nestjs/swagger` for API documentation
+- Jest for unit testing
 
-# Technology Stack
+### Frontend
+- React 18, Vite
+- React Router v6
+- Axios with interceptors
+- Vanilla CSS design system
 
-- **Frontend:** React 18, Vite, React Router, Axios, Custom Vanilla CSS Design System.
-- **Backend:** NestJS, TypeScript.
-- **Database:** PostgreSQL via TypeORM.
-- **Authentication:** Passport, JWT, bcryptjs.
-- **Testing:** Jest, Supertest.
-- **Containerization:** Docker & Docker Compose.
-- **Deployment:** Render (Backend), Vercel (Frontend), Neon (Cloud PostgreSQL).
+### Infrastructure & Deployment
+- Docker & Docker Compose
+- Backend Deployed on Render (`https://farm-build-your-portfolio-project-2.onrender.com`)
+- Frontend Deployed on Vercel (`https://taskboard-one-theta.vercel.app`)
+- PostgreSQL hosted on Neon
 
-# Architecture
+## Key Implemented Features
 
-The application operates as a decoupled Single Page Application (SPA) communicating with a REST API. 
+- **Authentication & Security:** User registration, login, logout, logout all sessions, change password, forgot/reset password. JWT access tokens paired with httpOnly refresh cookies and automatic client token rotation.
+- **Project Management:** Project creation, editing, deletion, and member management (adding/removing members by User ID).
+- **Task Management:** Task creation, editing, status changes (To Do, In Progress, Done), priority assignments, and deletion.
+- **Search, Filter & Sort:** Server-side and client-side filtering by status, priority, assignee, text search, sorting, and pagination.
+- **Role-Based Access Control:** Project creators hold Admin rights (can edit project details and manage members). Members can view projects and update tasks.
 
-- **Frontend to Backend:** The React client utilizes an Axios instance configured to send credentials (`httpOnly` cookies). 
-- **Authentication Flow:** Upon login, the server returns an access token in the JSON payload (kept in memory) and sets a secure `httpOnly` refresh token cookie. If an API request fails with a `401 Unauthorized`, the frontend intercepts it, calls the `/auth/refresh` endpoint using the cookie, securely updates the access token, and transparently replays the failed request.
-- **Role-Based Access:** Every project inherently assigns its creator as the "Admin". Admins have full control over the project's metadata, members, and task deletions. Regular members can view the project and update tasks assigned to them.
-- **Relational Integrity:** Projects own Tasks and associate with Users (Members). The backend enforces strict authorization checks before permitting any CRUD operation, ensuring data boundaries remain absolute.
+## System Architecture
 
-# Folder Structure
+```
+[ React Frontend (Vercel) ] <--- HTTP + httpOnly Cookie ---> [ NestJS Backend (Render) ] <---> [ PostgreSQL (Neon) ]
+```
+
+1. **Authentication Flow:** On login, the backend responds with a short-lived JSON access token and sets an `httpOnly` refresh token cookie. Axios request interceptors attach the access token to outgoing requests; response interceptors automatically call `/auth/refresh` on `401 Unauthorized` responses to obtain a fresh access token seamlessly.
+2. **Access Control:** All project and task endpoints enforce membership verification via guards and TypeORM query constraints.
+
+## Folder Structure
 
 ```
 taskboard/
-├── backend/            # NestJS Application
-│   ├── src/            # Core business logic and controllers
-│   ├── test/           # e2e testing directory
-│   ├── Dockerfile      # Backend container config
-│   └── package.json    # Backend dependencies
-├── frontend/           # React/Vite Application
-│   ├── src/            # UI Components, Pages, and API services
-│   ├── Dockerfile      # NGINX container config for the static build
-│   └── package.json    # Frontend dependencies
-├── docker-compose.yml  # Orchestrates the DB, Backend, and Frontend locally
-└── README.md           # Project documentation (You are here)
+├── backend/                  # NestJS API application
+│   ├── src/                  # Controllers, services, modules, entities
+│   ├── test/                 # Service unit tests
+│   ├── Dockerfile            # Container configuration
+│   └── package.json
+├── frontend/                 # React frontend application
+│   ├── src/                  # Components, pages, context, styles
+│   ├── Dockerfile            # NGINX container configuration
+│   └── package.json
+├── docker-compose.yml        # Local multi-container orchestration
+└── README.md
 ```
 
-# Installation
+## Local Development Setup
 
-## Running Locally (Native)
+### Native Setup
 
-1. **Clone the repository.**
-2. **Setup the Database:** Ensure you have PostgreSQL running locally or a cloud instance.
-3. **Backend Setup:**
-   - `cd backend`
-   - Copy `.env.example` to `.env` and configure your database and JWT secrets.
-   - Run `npm install` followed by `npm run start:dev`.
-4. **Frontend Setup:**
-   - `cd frontend`
-   - Copy `.env.example` to `.env` (ensure `VITE_API_URL` points to the backend).
-   - Run `npm install` followed by `npm run dev`.
-
-## Running with Docker
-
-To spin up the entire stack (Database, Backend API, and Frontend web server) identically in one command:
-
-1. Copy `.env.example` to `.env` in the root (if provided) or ensure your backend `.env` is configured.
-2. Ensure Docker Desktop is running.
-3. From the root directory, run:
+1. **Backend:**
    ```bash
-   docker compose up --build
+   cd backend
+   npm install
+   # Create .env file with DATABASE_* and JWT_* credentials
+   npm run start:dev
    ```
-4. Access the frontend at `http://localhost:3000` and the API at `http://localhost:3001/api`.
 
-# Environment Variables
+2. **Frontend:**
+   ```bash
+   cd frontend
+   npm install
+   # Create .env file with VITE_API_URL=http://localhost:3001/api
+   npm run dev
+   ```
 
-## Backend (`backend/.env`)
-- `NODE_ENV`: Application environment (e.g., `development`, `production`).
-- `PORT`: Server port (default: 3001).
-- `FRONTEND_URL`: CORS origin mapping.
-- `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME`: PostgreSQL connection details.
-- `DATABASE_SSL`: Set to `true` if using a hosted database like Neon, `false` for local Docker.
-- `JWT_SECRET`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`: Secure keys for token signing.
-- `JWT_EXPIRES_IN`: Lifespan configuration.
+### Docker Setup
 
-## Frontend (`frontend/.env`)
-- `VITE_API_URL`: The full URL to the backend API (e.g., `http://localhost:3001/api`).
-
-# API Documentation
-
-The backend exposes an interactive Swagger (OpenAPI) interface. You can access it by running the backend and navigating to `/api/docs`. 
-- **Local:** `http://localhost:3001/api/docs`
-- **Live:** `https://farm-build-your-portfolio-project-2.onrender.com/api/docs`
-
-# Live Demo
-
-- **Frontend:** [https://taskboard-one-theta.vercel.app](https://taskboard-one-theta.vercel.app)
-- **Backend API:** [https://farm-build-your-portfolio-project-2.onrender.com](https://farm-build-your-portfolio-project-2.onrender.com)
-
-# Testing
-
-To run the automated backend test suite, navigate to the `backend/` directory:
+Run the entire application stack (PostgreSQL, Backend API, Frontend NGINX) using Docker Compose from the root directory:
 
 ```bash
-# Run unit tests
-npm run test
-
-# Run tests in watch mode
-npm run test:watch
+docker compose up --build
 ```
-The tests execute strict checks against the core authentication, project, and task services to verify logic and role boundaries.
 
-# Assignment Coverage
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:3001/api`
+- Swagger Documentation: `http://localhost:3001/api/docs`
 
-This implementation satisfies all requirements specified in the original technical assignment. 
+## API Documentation
 
-- **All core requirements were completed successfully:** Authentication (JWT, hashing), Project CRUD and membership boundaries, Task CRUD with advanced filtering and statuses, and a comprehensive frontend UI mapping 1:1 with the requested functionality.
-- **Optional Bonus Features Implemented:** 
+- **Swagger UI (Local):** `http://localhost:3001/api/docs`
+- **Swagger UI (Production):** `https://farm-build-your-portfolio-project-2.onrender.com/api/docs`
+- **Postman Collection:** Located in `backend/Taskboard-API.postman_collection.json`
+
+## Testing
+
+Backend unit tests can be executed from the `backend/` directory:
+
+```bash
+cd backend
+npm run test
+```
+
+## Live Deployment Links
+
+- **Frontend App:** [https://taskboard-one-theta.vercel.app](https://taskboard-one-theta.vercel.app)
+- **Backend API:** [https://farm-build-your-portfolio-project-2.onrender.com/api](https://farm-build-your-portfolio-project-2.onrender.com/api)
+
+## Technical Assignment Coverage
+
+- **Core Scope:** Registration, login, password hashing, JWT guards, project CRUD, task CRUD, status/priority filtering, responsive frontend, and client-side validation were all completed.
+- **Bonus Features Implemented:**
   - Docker Compose orchestration.
-  - Swagger/OpenAPI documentation.
-  - Pagination, Search, and Sorting on Task lists.
-
-
+  - Swagger OpenAPI documentation.
+  - Pagination, text search, and multi-field sorting.
+  - Complete Postman API collection.

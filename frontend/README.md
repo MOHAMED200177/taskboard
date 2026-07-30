@@ -1,81 +1,78 @@
 # Task Management Frontend
 
-This is the frontend application for the Task Management platform. It provides a sleek, responsive, and premium UI built on a modern Black & Emerald design system.
+A responsive web application for project and task management built with React and Vite, styled using a custom Black & Emerald design system.
 
-## Project Overview
+## Overview
 
-The application is built using **React** and **Vite**. It interacts securely with the backend API, offering real-time user validation, protected routing, dynamic search and filtering, and comprehensive state management without relying on heavy external state libraries. 
-
-## Features
-
-- **Premium Design:** Clean, modern interface emphasizing a Black & Emerald palette.
-- **Authentication:** Full login, registration, and password recovery flows with live client-side validation and password strength checklists.
-- **Silent Token Refresh:** Built-in Axios interceptors seamlessly rotate JWTs in the background.
-- **Project Dashboard:** Create, manage, and view assigned projects.
-- **Kanban Task Board:** Visualize, filter, and organize tasks efficiently.
-- **Dynamic Search & Filtering:** Debounced searching and sorting by status/priority.
-- **Responsive:** Fully optimized for both desktop and mobile devices.
+The frontend interacts with the RESTful NestJS API to provide real-time form validation, session management with silent JWT rotation, project management, and a task board with search, filtering, and pagination capabilities.
 
 ## Tech Stack
 
-- **Framework:** React 18
-- **Build Tool:** Vite
-- **Routing:** React Router (v6)
-- **HTTP Client:** Axios
-- **Styling:** Vanilla CSS (Custom Design System)
+- **Library:** React 18
+- **Build Tool:** Vite 5
+- **Routing:** React Router v6
+- **HTTP Client:** Axios 1.7
+- **Styling:** Custom Vanilla CSS
+
+## Features
+
+- **Authentication UX:** Login, registration with password rule checklists, password visibility toggles, change password, and reset password flows.
+- **Session Handling:** Automatic token rotation via Axios response interceptors on 401 Unauthorized responses.
+- **Projects Management:** Create projects, update project details, view team members, and add/remove project members by User ID.
+- **Task Management:** Create, edit, and delete tasks within projects.
+- **Filters & Search:** Filter by status (To Do, In Progress, Done), priority (Low, Medium, High), search by text, and sort by fields.
 
 ## Project Structure
 
 ```
 frontend/
 ├── src/
-│   ├── api/          # Axios instance and API interceptors
-│   ├── components/   # Reusable UI components (Modals, Layout, ProtectedRoute)
-│   ├── context/      # Global state providers (AuthContext)
-│   ├── pages/        # Main application views (Dashboard, Login, Register)
-│   ├── index.css     # Global design system variables and tokens
-│   └── main.jsx      # Application entry point
-├── index.html        # HTML template
-├── vite.config.js    # Vite configuration
-└── Dockerfile        # Production NGINX configuration
+│   ├── api/            # Axios client setup and interceptors
+│   ├── components/     # Modals (ProjectModal, TaskModal, MemberModal), Layout, ProtectedRoute
+│   ├── context/        # AuthContext provider
+│   ├── pages/          # Login, Register, Dashboard, ProjectBoard
+│   ├── utils.js        # Helper functions
+│   ├── index.css       # Design tokens and styles
+│   ├── App.jsx         # App routes
+│   └── main.jsx        # Entry point
+├── index.html
+├── vite.config.js
+├── Dockerfile          # NGINX production container
+└── package.json
 ```
 
 ## Environment Variables
 
-Create a `.env` file in the `frontend` directory:
+Create a `.env` file in the `frontend/` directory:
 
 ```env
-# The URL to the Backend API
 VITE_API_URL=http://localhost:3001/api
 ```
 
-## Installation
+## Installation & Setup
 
-```bash
-npm install
-```
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Running Locally
+2. Start Vite development server:
+   ```bash
+   npm run dev
+   ```
+   App running at `http://localhost:3000`
 
-To start the Vite development server:
+3. Production build:
+   ```bash
+   npm run build
+   ```
 
-```bash
-npm run dev
-```
-The application will be available at `http://localhost:3000`.
-
-## Build Instructions
-
-To bundle the application for production:
-
-```bash
-npm run build
-```
-This will compile and minify the assets into the `dist/` folder. You can preview the production build locally using `npm run preview`.
+4. Preview production build:
+   ```bash
+   npm run preview
+   ```
 
 ## Deployment
 
-The frontend is deployed as a static Single Page Application (SPA).
-
-- **Live URL:** **[https://taskboard-one-theta.vercel.app](https://taskboard-one-theta.vercel.app)**
-- **Backend Target:** It points to the live backend API at `https://farm-build-your-portfolio-project-2.onrender.com/api`
+- **Live App URL:** `https://taskboard-one-theta.vercel.app`
+- **Target Backend API:** `https://farm-build-your-portfolio-project-2.onrender.com/api`

@@ -1,58 +1,56 @@
-# Task Management API
+# Task Management Backend API
 
-This is the backend for the Task Management application, providing a secure, scalable RESTful API to handle users, projects, tasks, and role-based access control.
+Provides a secure RESTful API for user authentication, project management, task tracking, and role-based authorization.
 
-## Project Overview
+## Overview
 
-The backend is built using **NestJS** and **PostgreSQL**. It enforces robust business logic including strict role-based data boundaries (users can only access projects they belong to), secure password hashing, and stateless JWT authentication with short-lived access tokens and httpOnly refresh cookies. 
-
-## Features
-
-- **Authentication:** Registration, Login, Logout (single & all devices), Password Change, and Password Recovery.
-- **JWT Flow:** Secure HTTP-only refresh tokens and short-lived access tokens.
-- **Role-Based Access Control:** Differentiates between Project Admins (creators) and Members.
-- **Projects & Tasks:** Full CRUD operations for projects and tasks with relational integrity.
-- **Filtering & Search:** Built-in endpoints for querying tasks by status, priority, assignee, and search terms.
-- **Validation:** Strict incoming request validation and sanitization using `class-validator`.
-- **API Documentation:** Auto-generated Swagger documentation.
+The backend is built with NestJS and PostgreSQL (via TypeORM). It implements role-based access control, secure password hashing with bcryptjs, and a dual-token JWT authentication flow (short-lived access tokens and httpOnly refresh cookies).
 
 ## Tech Stack
 
-- **Framework:** NestJS (Node.js)
+- **Framework:** NestJS 11
+- **Language:** TypeScript
 - **Database:** PostgreSQL
 - **ORM:** TypeORM
-- **Authentication:** Passport, JWT, bcryptjs
+- **Authentication:** Passport-JWT, bcryptjs
+- **Validation:** class-validator, class-transformer
+- **Documentation:** Swagger UI (`@nestjs/swagger`)
 - **Testing:** Jest, Supertest
-- **Containerization:** Docker
+
+## Architecture & Modules
+
+- **AuthModule (`src/auth`):** Handles registration, login, token refresh, password recovery, password change, and session logout (single and all devices).
+- **ProjectsModule (`src/projects`):** Manages project lifecycle, project ownership (admin role), and member assignments.
+- **TasksModule (`src/tasks`):** Manages task CRUD operations, assignment bounds, status/priority filtering, debounced searching, sorting, and pagination.
+- **UsersModule (`src/users`):** User entity definitions and profile queries.
 
 ## Project Structure
 
 ```
 backend/
 ├── src/
-│   ├── auth/         # Authentication and session management
-│   ├── database/     # TypeORM configurations and migrations
-│   ├── projects/     # Project and member management modules
-│   ├── tasks/        # Task creation, assignment, and filtering
-│   ├── users/        # User entity and core profile logic
-│   ├── app.module.ts # Main application module
-│   └── main.ts       # Application bootstrap
-├── test/             # End-to-end (e2e) tests
-├── Dockerfile        # Production Docker configuration
-└── package.json      # Dependencies and scripts
+│   ├── auth/           # Authentication controllers, services, strategies, guards, DTOs
+│   ├── database/       # Data source configuration, seeds, and migrations
+│   ├── projects/       # Projects controller, service, entity, DTOs
+│   ├── tasks/          # Tasks controller, service, entity, DTOs
+│   ├── users/          # User entity and services
+│   ├── app.module.ts   # Root application module
+│   └── main.ts         # Application entry point & Swagger configuration
+├── test/               # End-to-end test suite
+├── Taskboard-API.postman_collection.json # API Postman collection
+├── Dockerfile          # Multi-stage Docker build
+└── package.json
 ```
 
 ## Environment Variables
 
-Create a `.env` file in the `backend` directory with the following variables:
+Create a `.env` file in the `backend/` directory:
 
 ```env
-# Server
 NODE_ENV=development
 PORT=3001
 FRONTEND_URL=http://localhost:3000
 
-# Database
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
 DATABASE_USER=postgres
@@ -60,32 +58,26 @@ DATABASE_PASSWORD=postgres
 DATABASE_NAME=taskboard
 DATABASE_SSL=false
 
-# Authentication
-JWT_SECRET=your_super_secret_key
+JWT_SECRET=your_jwt_secret
 JWT_EXPIRES_IN=7d
 JWT_ACCESS_SECRET=your_access_secret
 JWT_REFRESH_SECRET=your_refresh_secret
 ```
 
-## Installation
+## Installation & Setup
 
-```bash
-npm install
-```
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Running Locally
-
-To run the server in development mode:
-
-```bash
-npm run start:dev
-```
-The server will start at `http://localhost:3001`.
+2. Start development server:
+   ```bash
+   npm run start:dev
+   ```
+   API running at `http://localhost:3001/api`
 
 ## Running with Docker
-
-You can containerize the backend or run it alongside the database via Docker Compose from the root directory.
-To build and run just the backend image:
 
 ```bash
 docker build -t taskboard-backend .
@@ -94,32 +86,23 @@ docker run -p 3001:3001 --env-file .env taskboard-backend
 
 ## API Documentation (Swagger)
 
-When the server is running, the interactive Swagger API documentation is automatically generated and accessible at:
+Swagger UI is available when the backend is running:
 - **Local:** `http://localhost:3001/api/docs`
-- **Production:** `https://farm-build-your-portfolio-project-2.onrender.com/api/docs`
-
-## Authentication Overview
-
-The API implements a dual-token JWT architecture:
-1. **Access Token:** Returned in the JSON body upon login. Sent by the client in the `Authorization: Bearer <token>` header.
-2. **Refresh Token:** Sent automatically to the client as an `httpOnly` secure cookie. Used to seamlessly fetch new access tokens without exposing the refresh mechanism to JavaScript.
+- **Deployed:** `https://farm-build-your-portfolio-project-2.onrender.com/api/docs`
 
 ## Testing
-
-The backend includes a comprehensive suite of automated tests verifying core logic and security boundaries.
 
 ```bash
 # Run unit tests
 npm run test
 
-# Run tests with watch mode
+# Run tests in watch mode
 npm run test:watch
 
-# Run test coverage report
+# Run coverage report
 npm run test:cov
 ```
 
 ## Deployment
 
-The production API is currently deployed and hosted at:
-**[https://farm-build-your-portfolio-project-2.onrender.com](https://farm-build-your-portfolio-project-2.onrender.com)**
+- **Live API URL:** `https://farm-build-your-portfolio-project-2.onrender.com`
